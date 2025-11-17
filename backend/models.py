@@ -3,6 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from datetime import datetime
 import bcrypt
+import os
 
 Base = declarative_base()
 
@@ -137,8 +138,16 @@ class Message(Base):
 
 
 # Database initialization
-def init_db(database_url='sqlite:///filesearch.db'):
+def init_db(database_url=None):
     """Initialize the database"""
+    # Use DATABASE_URL from environment if available, otherwise default to SQLite
+    if database_url is None:
+        database_url = os.getenv('DATABASE_URL', 'sqlite:///filesearch.db')
+
+    # Handle Render's postgres:// URL format (convert to postgresql://)
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+
     engine = create_engine(
         database_url,
         echo=False,
