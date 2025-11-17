@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:ai.google.dev)",
+      "WebSearch",
+      "Bash(mkdir -p backend frontend)",
+      "Bash(npm install)",
+      "Bash(test -f .env)",
+      "Bash(pip install -r requirements.txt)",
+      "Bash(python app.py)",
+      "Bash(npm run dev)",
+      "Bash(python:*)",
+      "Bash(pip install:*)",
+      "Bash(cat:*)",
+      "Bash(app_new.py)",
+      "Bash(git init:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -1,0 +1,18 @@
+Test Document for File Search Application
+
+This is a sample document to test the Gemini File Search functionality.
+
+Key Information:
+- Product Name: Gemini File Search App
+- Version: 1.0
+- Technology Stack: React + Flask + Google Gemini API
+- Features: Multi-file upload, AI-powered search, Chat interface
+
+Sample Data:
+The application was built in November 2025 and uses the latest Gemini 2.0 Flash model for file search capabilities. It supports various file formats including PDF, DOCX, TXT, JSON, and code files.
+
+Testing Questions:
+1. What is the product name?
+2. When was this application built?
+3. What technology stack is used?
+4. What file formats are supported?
