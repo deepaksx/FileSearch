@@ -815,6 +815,53 @@ def health():
     return jsonify({"status": "healthy", "timestamp": datetime.now().isoformat()})
 
 
+@app.route('/api/init-admin', methods=['POST'])
+def init_admin():
+    """Initialize admin user - call this once after deployment"""
+    try:
+        session = get_session()
+
+        # Check if admin user already exists
+        existing_admin = session.query(User).filter_by(username='admin').first()
+
+        if existing_admin:
+            return jsonify({
+                "status": "info",
+                "message": "Admin user already exists. No action needed."
+            }), 200
+
+        # Create admin user
+        import bcrypt
+        password_hash = bcrypt.hashpw('admin123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        admin_user = User(
+            username='admin',
+            password_hash=password_hash,
+            email='admin@filesearch.com',
+            role='admin'
+        )
+
+        session.add(admin_user)
+        session.commit()
+
+        return jsonify({
+            "status": "success",
+            "message": "Admin user created successfully!",
+            "credentials": {
+                "username": "admin",
+                "password": "admin123"
+            },
+            "warning": "Please change the password after first login!"
+        }), 201
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": f"Failed to create admin user: {str(e)}"
+        }), 500
+    finally:
+        session.close()
+
+
 # ==================== RUN SERVER ====================
 
 if __name__ == '__main__':
