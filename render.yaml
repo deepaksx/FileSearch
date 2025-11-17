@@ -22,11 +22,8 @@ services:
     healthCheckPath: /api/health
 
   # Frontend Service (Static Site)
-  - type: web
+  - type: static
     name: filesearch-frontend
-    runtime: static
-    env: static
-    plan: free
     buildCommand: "cd frontend && npm install && npm run build"
     staticPublishPath: frontend/dist
     envVars:
