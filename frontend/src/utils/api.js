@@ -43,6 +43,65 @@ export const isAuthenticated = () => {
   return !!localStorage.getItem('token');
 };
 
+// ==================== ADMIN - PROJECT MANAGEMENT ====================
+
+export const listProjects = async () => {
+  const response = await axios.get(`${API_BASE_URL}/admin/projects`, {
+    headers: getAuthHeaders()
+  });
+  return response.data;
+};
+
+export const createProject = async (projectData) => {
+  const response = await axios.post(`${API_BASE_URL}/admin/projects`, projectData, {
+    headers: getAuthHeaders()
+  });
+  return response.data;
+};
+
+export const updateProject = async (projectId, projectData) => {
+  const response = await axios.put(`${API_BASE_URL}/admin/projects/${projectId}`, projectData, {
+    headers: getAuthHeaders()
+  });
+  return response.data;
+};
+
+export const deleteProject = async (projectId) => {
+  const response = await axios.delete(`${API_BASE_URL}/admin/projects/${projectId}`, {
+    headers: getAuthHeaders()
+  });
+  return response.data;
+};
+
+export const assignProjectToUser = async (projectId, userId) => {
+  const response = await axios.post(`${API_BASE_URL}/admin/projects/${projectId}/assign`,
+    { user_id: userId },
+    { headers: getAuthHeaders() }
+  );
+  return response.data;
+};
+
+export const unassignProjectFromUser = async (projectId, userId) => {
+  const response = await axios.delete(`${API_BASE_URL}/admin/projects/${projectId}/unassign/${userId}`, {
+    headers: getAuthHeaders()
+  });
+  return response.data;
+};
+
+export const getProjectUsers = async (projectId) => {
+  const response = await axios.get(`${API_BASE_URL}/admin/projects/${projectId}/users`, {
+    headers: getAuthHeaders()
+  });
+  return response.data;
+};
+
+export const getProjectStores = async (projectId) => {
+  const response = await axios.get(`${API_BASE_URL}/admin/projects/${projectId}/stores`, {
+    headers: getAuthHeaders()
+  });
+  return response.data;
+};
+
 // ==================== ADMIN - USER MANAGEMENT ====================
 
 export const listUsers = async () => {
@@ -134,7 +193,14 @@ export const getStoreUsers = async (storeId) => {
   return response.data;
 };
 
-// ==================== END-USER - STORE ACCESS ====================
+// ==================== END-USER - PROJECT & STORE ACCESS ====================
+
+export const getUserProjects = async () => {
+  const response = await axios.get(`${API_BASE_URL}/user/projects`, {
+    headers: getAuthHeaders()
+  });
+  return response.data;
+};
 
 export const getUserStores = async () => {
   const response = await axios.get(`${API_BASE_URL}/user/stores`, {

@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { adminListStores, uploadStore, uploadFilesToStore, updateStore, deleteStore,
+import { adminListStores, getProjectStores, uploadStore, uploadFilesToStore, updateStore, deleteStore,
          listUsers, assignStoreToUser, unassignStoreFromUser, getStoreUsers } from '../../utils/api';
 import ProgressOverlay from './ProgressOverlay';
 import './StoreManagement.css';
 
-function StoreManagement() {
+function StoreManagement({ selectedProject }) {
   const [stores, setStores] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,11 +40,17 @@ function StoreManagement() {
   useEffect(() => {
     loadStores();
     loadUsers();
-  }, []);
+  }, [selectedProject]);
 
   const loadStores = async () => {
+    if (!selectedProject) {
+      setStores([]);
+      setLoading(false);
+      return;
+    }
+
     try {
-      const data = await adminListStores();
+      const data = await getProjectStores(selectedProject.id);
       setStores(data.stores);
     } catch (err) {
       alert('Failed to load stores: ' + (err.response?.data?.error || err.message));
@@ -72,6 +78,11 @@ function StoreManagement() {
   const handleUploadSubmit = async (e) => {
     e.preventDefault();
 
+    if (!selectedProject) {
+      alert('No project selected');
+      return;
+    }
+
     if (uploadFormData.files.length === 0) {
       alert('Please select files to upload');
       return;
@@ -81,6 +92,7 @@ function StoreManagement() {
     uploadFormData.files.forEach(file => {
       formData.append('files', file);
     });
+    formData.append('project_id', selectedProject.id);
     formData.append('display_name', uploadFormData.display_name);
     formData.append('description', uploadFormData.description);
 
@@ -248,17 +260,23 @@ function StoreManagement() {
       <div className="section-header">
         <div>
           <h2>Store Management</h2>
-          <p>Manage document stores and user access</p>
+          <p>{selectedProject ? `Managing stores in ${selectedProject.name}` : 'Select a project to manage stores'}</p>
         </div>
-        <button onClick={() => setShowUploadModal(true)} className="primary-btn">
-          + Upload Files & Create Store
-        </button>
+        {selectedProject && (
+          <button onClick={() => setShowUploadModal(true)} className="primary-btn">
+            + Upload Files & Create Store
+          </button>
+        )}
       </div>
 
-      {loading ? (
+      {!selectedProject ? (
+        <div className="empty-state">
+          <p>Please select a project from the Projects tab to manage its stores.</p>
+        </div>
+      ) : loading ? (
         <div className="loading-state">Loading stores...</div>
       ) : stores.length === 0 ? (
-        <div className="empty-state">No stores found. Create one to get started!</div>
+        <div className="empty-state">No stores found in this project. Create one to get started!</div>
       ) : (
         <div className="stores-grid">
           {stores.map(store => (
