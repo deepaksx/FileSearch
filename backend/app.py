@@ -65,6 +65,35 @@ from sqlalchemy.orm import sessionmaker
 Session = sessionmaker(bind=engine)
 db_session = scoped_session(Session)
 
+# Auto-create admin user on startup if it doesn't exist
+def ensure_admin_exists():
+    """Automatically create admin user if it doesn't exist"""
+    try:
+        session = get_session(engine)
+        existing_admin = session.query(User).filter_by(username='admin').first()
+
+        if not existing_admin:
+            import bcrypt
+            password_hash = bcrypt.hashpw('admin123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            admin_user = User(
+                username='admin',
+                password_hash=password_hash,
+                email='admin@filesearch.com',
+                role='admin'
+            )
+            session.add(admin_user)
+            session.commit()
+            print("✓ Admin user created automatically (username: admin, password: admin123)")
+        else:
+            print("✓ Admin user already exists")
+
+        session.close()
+    except Exception as e:
+        print(f"⚠ Admin user creation skipped: {str(e)}")
+
+# Run admin creation check on startup
+ensure_admin_exists()
+
 @app.teardown_appcontext
 def shutdown_session(exception=None):
     db_session.remove()
