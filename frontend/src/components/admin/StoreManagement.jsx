@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { adminListStores, uploadStore, updateStore, deleteStore,
+import { adminListStores, uploadStore, uploadFilesToStore, updateStore, deleteStore,
          listUsers, assignStoreToUser, unassignStoreFromUser, getStoreUsers } from '../../utils/api';
 import ProgressOverlay from './ProgressOverlay';
 import './StoreManagement.css';
@@ -9,6 +9,7 @@ function StoreManagement() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showAddFilesModal, setShowAddFilesModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedStore, setSelectedStore] = useState(null);
@@ -17,6 +18,10 @@ function StoreManagement() {
   const [uploadFormData, setUploadFormData] = useState({
     display_name: '',
     description: '',
+    files: []
+  });
+
+  const [addFilesFormData, setAddFilesFormData] = useState({
     files: []
   });
 
@@ -99,6 +104,59 @@ function StoreManagement() {
       alert('Store created successfully!');
       setShowUploadModal(false);
       setUploadFormData({ display_name: '', description: '', files: [] });
+      setUploadProgress({ show: false, progress: 0, fileCount: 0, currentFile: '' });
+      loadStores();
+    } catch (err) {
+      setUploadProgress({ show: false, progress: 0, fileCount: 0, currentFile: '' });
+      alert('Failed to upload files: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
+  const handleAddFilesToStore = (store) => {
+    setSelectedStore(store);
+    setAddFilesFormData({ files: [] });
+    setShowAddFilesModal(true);
+  };
+
+  const handleAddFilesChange = (e) => {
+    setAddFilesFormData({
+      files: Array.from(e.target.files)
+    });
+  };
+
+  const handleAddFilesSubmit = async (e) => {
+    e.preventDefault();
+
+    if (addFilesFormData.files.length === 0) {
+      alert('Please select files to upload');
+      return;
+    }
+
+    const formData = new FormData();
+    addFilesFormData.files.forEach(file => {
+      formData.append('files', file);
+    });
+
+    // Show progress overlay
+    setUploadProgress({
+      show: true,
+      progress: 0,
+      fileCount: addFilesFormData.files.length,
+      currentFile: addFilesFormData.files[0]?.name || ''
+    });
+
+    try {
+      await uploadFilesToStore(selectedStore.id, formData, (progressEvent) => {
+        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+        setUploadProgress(prev => ({
+          ...prev,
+          progress: percentCompleted
+        }));
+      });
+
+      alert('Files uploaded successfully!');
+      setShowAddFilesModal(false);
+      setAddFilesFormData({ files: [] });
       setUploadProgress({ show: false, progress: 0, fileCount: 0, currentFile: '' });
       loadStores();
     } catch (err) {
@@ -222,6 +280,9 @@ function StoreManagement() {
               </div>
 
               <div className="store-actions">
+                <button onClick={() => handleAddFilesToStore(store)} className="add-files-btn">
+                  Add Files
+                </button>
                 <button onClick={() => handleEditStore(store)} className="edit-btn">
                   Edit
                 </button>
@@ -292,6 +353,47 @@ function StoreManagement() {
                 </button>
                 <button type="submit" className="primary-btn">
                   Upload & Create Store
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Files to Existing Store Modal */}
+      {showAddFilesModal && (
+        <div className="modal-overlay" onClick={() => setShowAddFilesModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Add Files to {selectedStore?.display_name}</h3>
+              <button onClick={() => setShowAddFilesModal(false)} className="close-btn">×</button>
+            </div>
+
+            <form onSubmit={handleAddFilesSubmit} className="modal-form">
+              <div className="form-group">
+                <label>Files * (txt, pdf, docx, md, json, py, js, csv, html, xml)</label>
+                <input
+                  type="file"
+                  multiple
+                  onChange={handleAddFilesChange}
+                  accept=".txt,.pdf,.docx,.md,.json,.py,.js,.csv,.html,.xml"
+                  required
+                />
+                {addFilesFormData.files.length > 0 && (
+                  <div className="file-list">
+                    {addFilesFormData.files.map((file, idx) => (
+                      <div key={idx} className="file-item">{file.name}</div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" onClick={() => setShowAddFilesModal(false)} className="cancel-btn">
+                  Cancel
+                </button>
+                <button type="submit" className="primary-btn">
+                  Upload Files
                 </button>
               </div>
             </form>

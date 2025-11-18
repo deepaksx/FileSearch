@@ -90,6 +90,14 @@ export const uploadStore = async (formData, onUploadProgress) => {
   return response.data;
 };
 
+export const uploadFilesToStore = async (storeId, formData, onUploadProgress) => {
+  const response = await axios.post(`${API_BASE_URL}/admin/stores/${storeId}/upload`, formData, {
+    headers: getAuthHeaders(),
+    onUploadProgress: onUploadProgress
+  });
+  return response.data;
+};
+
 export const updateStore = async (storeId, storeData) => {
   const response = await axios.put(`${API_BASE_URL}/admin/stores/${storeId}`, storeData, {
     headers: getAuthHeaders()

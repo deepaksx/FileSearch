@@ -461,6 +461,60 @@ def admin_upload_files():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route('/api/admin/stores/<int:store_id>/upload', methods=['POST'])
+@jwt_required()
+@admin_required
+def admin_upload_files_to_store(store_id):
+    """Admin: Upload additional files to an existing store"""
+    try:
+        # Check if store exists
+        store = db_session.query(Store).filter_by(id=store_id).first()
+        if not store:
+            return jsonify({"error": "Store not found"}), 404
+
+        if 'files' not in request.files:
+            return jsonify({"error": "No files provided"}), 400
+
+        files = request.files.getlist('files')
+
+        if not files or files[0].filename == '':
+            return jsonify({"error": "No files selected"}), 400
+
+        uploaded_files = []
+
+        # Upload files to existing store
+        for file in files:
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                file.save(filepath)
+
+                operation = client.file_search_stores.upload_to_file_search_store(
+                    file=filepath,
+                    file_search_store_name=store.gemini_store_id,
+                    config={'display_name': filename}
+                )
+
+                while not operation.done:
+                    time.sleep(1)
+                    operation = client.operations.get(operation)
+
+                uploaded_files.append({"name": filename})
+
+        if not uploaded_files:
+            return jsonify({"error": "No valid files uploaded"}), 400
+
+        return jsonify({
+            "success": True,
+            "store": store.to_dict(),
+            "files": uploaded_files,
+            "message": f"Successfully uploaded {len(uploaded_files)} file(s) to {store.display_name}"
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route('/api/admin/stores/<int:store_id>', methods=['DELETE'])
 @jwt_required()
 @admin_required

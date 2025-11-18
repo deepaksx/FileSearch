@@ -71,6 +71,23 @@
   gap: 0.4rem;
 }
 
+.add-files-btn {
+  flex: 1;
+  padding: 0.5rem 0.875rem;
+  background: #dbeafe;
+  color: #1e40af;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+
+.add-files-btn:hover {
+  background: #bfdbfe;
+}
+
 .assign-btn {
   flex: 1;
   padding: 0.5rem 0.875rem;
