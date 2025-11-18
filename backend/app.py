@@ -818,9 +818,8 @@ def health():
 @app.route('/api/init-admin', methods=['POST'])
 def init_admin():
     """Initialize admin user - call this once after deployment"""
+    session = get_session(engine)
     try:
-        session = get_session()
-
         # Check if admin user already exists
         existing_admin = session.query(User).filter_by(username='admin').first()
 
@@ -854,6 +853,7 @@ def init_admin():
         }), 201
 
     except Exception as e:
+        session.rollback()
         return jsonify({
             "status": "error",
             "message": f"Failed to create admin user: {str(e)}"
