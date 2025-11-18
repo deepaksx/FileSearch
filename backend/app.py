@@ -11,7 +11,7 @@ import tempfile
 import time
 from dotenv import load_dotenv
 from sqlalchemy.orm import scoped_session
-from models import init_db, get_session, User, Store, StoreAssignment, ChatSession, Message
+from models import init_db, get_session, User, Project, ProjectAssignment, Store, StoreAssignment, ChatSession, Message
 from auth import admin_required, user_required, get_current_user
 
 # Load environment variables
@@ -239,6 +239,210 @@ def delete_user(user_id):
         return jsonify({"error": str(e)}), 500
 
 
+# ==================== ADMIN - PROJECT MANAGEMENT ====================
+
+@app.route('/api/admin/projects', methods=['GET'])
+@jwt_required()
+@admin_required
+def admin_list_projects():
+    """Admin: List all projects"""
+    try:
+        projects_db = db_session.query(Project).all()
+
+        projects_list = []
+        for project in projects_db:
+            project_dict = project.to_dict()
+
+            # Get store count
+            store_count = db_session.query(Store).filter_by(project_id=project.id).count()
+            project_dict['store_count'] = store_count
+
+            # Get assigned users count
+            assignments_count = db_session.query(ProjectAssignment).filter_by(project_id=project.id).count()
+            project_dict['assigned_users'] = assignments_count
+
+            projects_list.append(project_dict)
+
+        return jsonify({
+            "success": True,
+            "projects": projects_list
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/admin/projects', methods=['POST'])
+@jwt_required()
+@admin_required
+def create_project():
+    """Admin: Create a new project"""
+    try:
+        data = request.get_json()
+        name = data.get('name')
+        description = data.get('description', '')
+
+        if not name:
+            return jsonify({"error": "Project name required"}), 400
+
+        current_user = get_current_user()
+        project = Project(
+            name=name,
+            description=description,
+            created_by=current_user.id
+        )
+
+        db_session.add(project)
+        db_session.commit()
+
+        return jsonify({
+            "success": True,
+            "project": project.to_dict()
+        })
+
+    except Exception as e:
+        db_session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/admin/projects/<int:project_id>', methods=['PUT'])
+@jwt_required()
+@admin_required
+def update_project(project_id):
+    """Admin: Update a project"""
+    try:
+        project = db_session.query(Project).filter_by(id=project_id).first()
+        if not project:
+            return jsonify({"error": "Project not found"}), 404
+
+        data = request.get_json()
+
+        if 'name' in data:
+            project.name = data['name']
+        if 'description' in data:
+            project.description = data['description']
+
+        db_session.commit()
+
+        return jsonify({
+            "success": True,
+            "project": project.to_dict()
+        })
+
+    except Exception as e:
+        db_session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/admin/projects/<int:project_id>', methods=['DELETE'])
+@jwt_required()
+@admin_required
+def delete_project(project_id):
+    """Admin: Delete a project"""
+    try:
+        project = db_session.query(Project).filter_by(id=project_id).first()
+        if not project:
+            return jsonify({"error": "Project not found"}), 404
+
+        # Delete project (cascades to stores, sessions, etc.)
+        db_session.delete(project)
+        db_session.commit()
+
+        return jsonify({
+            "success": True,
+            "message": "Project deleted successfully"
+        })
+
+    except Exception as e:
+        db_session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/admin/projects/<int:project_id>/assign', methods=['POST'])
+@jwt_required()
+@admin_required
+def assign_project_to_user(project_id):
+    """Admin: Assign a project to a user"""
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+
+        if not user_id:
+            return jsonify({"error": "user_id required"}), 400
+
+        project = db_session.query(Project).filter_by(id=project_id).first()
+        user = db_session.query(User).filter_by(id=user_id).first()
+
+        if not project or not user:
+            return jsonify({"error": "Project or user not found"}), 404
+
+        # Check if already assigned
+        existing = db_session.query(ProjectAssignment).filter_by(
+            project_id=project_id, user_id=user_id
+        ).first()
+
+        if existing:
+            return jsonify({"error": "Project already assigned to user"}), 400
+
+        assignment = ProjectAssignment(project_id=project_id, user_id=user_id)
+        db_session.add(assignment)
+        db_session.commit()
+
+        return jsonify({
+            "success": True,
+            "assignment": assignment.to_dict()
+        })
+
+    except Exception as e:
+        db_session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/admin/projects/<int:project_id>/unassign/<int:user_id>', methods=['DELETE'])
+@jwt_required()
+@admin_required
+def unassign_project_from_user(project_id, user_id):
+    """Admin: Unassign a project from a user"""
+    try:
+        assignment = db_session.query(ProjectAssignment).filter_by(
+            project_id=project_id, user_id=user_id
+        ).first()
+
+        if not assignment:
+            return jsonify({"error": "Assignment not found"}), 404
+
+        db_session.delete(assignment)
+        db_session.commit()
+
+        return jsonify({
+            "success": True,
+            "message": "Project unassigned successfully"
+        })
+
+    except Exception as e:
+        db_session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/admin/projects/<int:project_id>/users', methods=['GET'])
+@jwt_required()
+@admin_required
+def get_project_users(project_id):
+    """Admin: Get users assigned to a project"""
+    try:
+        assignments = db_session.query(ProjectAssignment).filter_by(project_id=project_id).all()
+        user_ids = [a.user_id for a in assignments]
+        users = db_session.query(User).filter(User.id.in_(user_ids)).all() if user_ids else []
+
+        return jsonify({
+            "success": True,
+            "users": [u.to_dict() for u in users]
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # ==================== ADMIN - STORE MANAGEMENT ====================
 
 @app.route('/api/admin/stores', methods=['GET'])
@@ -248,6 +452,45 @@ def admin_list_stores():
     """Admin: List all stores"""
     try:
         stores_db = db_session.query(Store).all()
+
+        stores_list = []
+        for store in stores_db:
+            store_dict = store.to_dict()
+
+            # Get file count from Gemini
+            try:
+                files = list(client.file_search_stores.documents.list(parent=store.gemini_store_id))
+                store_dict['file_count'] = len(files)
+            except:
+                store_dict['file_count'] = 0
+
+            # Get assigned users count
+            assignments_count = db_session.query(StoreAssignment).filter_by(store_id=store.id).count()
+            store_dict['assigned_users'] = assignments_count
+
+            stores_list.append(store_dict)
+
+        return jsonify({
+            "success": True,
+            "stores": stores_list
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/admin/projects/<int:project_id>/stores', methods=['GET'])
+@jwt_required()
+@admin_required
+def admin_list_project_stores(project_id):
+    """Admin: List all stores in a project"""
+    try:
+        # Verify project exists
+        project = db_session.query(Project).filter_by(id=project_id).first()
+        if not project:
+            return jsonify({"error": "Project not found"}), 404
+
+        stores_db = db_session.query(Store).filter_by(project_id=project_id).all()
 
         stores_list = []
         for store in stores_db:
@@ -401,8 +644,17 @@ def admin_upload_files():
             return jsonify({"error": "No files provided"}), 400
 
         files = request.files.getlist('files')
+        project_id = request.form.get('project_id')
         display_name = request.form.get('display_name', f"Store_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
         description = request.form.get('description', '')
+
+        if not project_id:
+            return jsonify({"error": "project_id required"}), 400
+
+        # Verify project exists
+        project = db_session.query(Project).filter_by(id=project_id).first()
+        if not project:
+            return jsonify({"error": "Project not found"}), 404
 
         if not files or files[0].filename == '':
             return jsonify({"error": "No files selected"}), 400
@@ -440,6 +692,7 @@ def admin_upload_files():
         # Save to database
         current_user = get_current_user()
         store = Store(
+            project_id=project_id,
             gemini_store_id=gemini_store_id,
             display_name=display_name,
             description=description,
@@ -550,22 +803,67 @@ def admin_delete_store(store_id):
 
 # ==================== END-USER ENDPOINTS ====================
 
+@app.route('/api/user/projects', methods=['GET'])
+@jwt_required()
+@user_required
+def user_list_projects():
+    """End-user: Get list of accessible projects"""
+    try:
+        current_user = get_current_user()
+
+        # Get assigned projects
+        project_assignments = db_session.query(ProjectAssignment).filter_by(user_id=current_user.id).all()
+        project_ids = [a.project_id for a in project_assignments]
+        projects = db_session.query(Project).filter(Project.id.in_(project_ids)).all() if project_ids else []
+
+        projects_list = []
+        for project in projects:
+            project_dict = project.to_dict()
+
+            # Get store count
+            store_count = db_session.query(Store).filter_by(project_id=project.id).count()
+            project_dict['store_count'] = store_count
+
+            projects_list.append(project_dict)
+
+        return jsonify({
+            "success": True,
+            "projects": projects_list
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route('/api/user/stores', methods=['GET'])
 @jwt_required()
 @user_required
 def user_list_stores():
-    """End-user: Get list of assigned stores"""
+    """End-user: Get list of accessible stores (from direct assignments and project assignments)"""
     try:
         current_user = get_current_user()
 
-        # Get assigned stores
-        assignments = db_session.query(StoreAssignment).filter_by(user_id=current_user.id).all()
-        store_ids = [a.store_id for a in assignments]
-        stores = db_session.query(Store).filter(Store.id.in_(store_ids)).all() if store_ids else []
+        # Get directly assigned stores
+        store_assignments = db_session.query(StoreAssignment).filter_by(user_id=current_user.id).all()
+        directly_assigned_store_ids = [a.store_id for a in store_assignments]
+
+        # Get project assigned stores
+        project_assignments = db_session.query(ProjectAssignment).filter_by(user_id=current_user.id).all()
+        assigned_project_ids = [a.project_id for a in project_assignments]
+        project_stores = db_session.query(Store).filter(Store.project_id.in_(assigned_project_ids)).all() if assigned_project_ids else []
+        project_store_ids = [s.id for s in project_stores]
+
+        # Combine and deduplicate store IDs
+        all_store_ids = list(set(directly_assigned_store_ids + project_store_ids))
+        stores = db_session.query(Store).filter(Store.id.in_(all_store_ids)).all() if all_store_ids else []
 
         stores_list = []
         for store in stores:
             store_dict = store.to_dict()
+
+            # Get project info
+            project = db_session.query(Project).filter_by(id=store.project_id).first()
+            store_dict['project_name'] = project.name if project else None
 
             # Get file count
             try:

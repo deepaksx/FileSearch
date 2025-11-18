@@ -20,6 +20,7 @@ class User(Base):
     # Relationships
     sessions = relationship('ChatSession', back_populates='user', cascade='all, delete-orphan')
     store_assignments = relationship('StoreAssignment', back_populates='user', cascade='all, delete-orphan')
+    project_assignments = relationship('ProjectAssignment', back_populates='user', cascade='all, delete-orphan')
 
     def set_password(self, password):
         """Hash and set the password"""
@@ -39,10 +40,35 @@ class User(Base):
         }
 
 
+class Project(Base):
+    __tablename__ = 'projects'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    created_by = Column(Integer, ForeignKey('users.id'), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    creator = relationship('User', foreign_keys=[created_by])
+    stores = relationship('Store', back_populates='project', cascade='all, delete-orphan')
+    assignments = relationship('ProjectAssignment', back_populates='project', cascade='all, delete-orphan')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'created_by': self.created_by,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+
 class Store(Base):
     __tablename__ = 'stores'
 
     id = Column(Integer, primary_key=True)
+    project_id = Column(Integer, ForeignKey('projects.id'), nullable=False)
     gemini_store_id = Column(String(255), unique=True, nullable=False)  # The actual Gemini API store ID
     display_name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
@@ -50,6 +76,7 @@ class Store(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
+    project = relationship('Project', back_populates='stores')
     creator = relationship('User', foreign_keys=[created_by])
     assignments = relationship('StoreAssignment', back_populates='store', cascade='all, delete-orphan')
     sessions = relationship('ChatSession', back_populates='store', cascade='all, delete-orphan')
@@ -57,6 +84,7 @@ class Store(Base):
     def to_dict(self):
         return {
             'id': self.id,
+            'project_id': self.project_id,
             'gemini_store_id': self.gemini_store_id,
             'display_name': self.display_name,
             'description': self.description,
@@ -81,6 +109,27 @@ class StoreAssignment(Base):
         return {
             'id': self.id,
             'store_id': self.store_id,
+            'user_id': self.user_id,
+            'assigned_at': self.assigned_at.isoformat() if self.assigned_at else None
+        }
+
+
+class ProjectAssignment(Base):
+    __tablename__ = 'project_assignments'
+
+    id = Column(Integer, primary_key=True)
+    project_id = Column(Integer, ForeignKey('projects.id'), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    assigned_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    project = relationship('Project', back_populates='assignments')
+    user = relationship('User', back_populates='project_assignments')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'project_id': self.project_id,
             'user_id': self.user_id,
             'assigned_at': self.assigned_at.isoformat() if self.assigned_at else None
         }
