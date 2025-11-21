@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { adminListStores, getProjectStores, uploadStore, uploadFilesToStore, updateStore, deleteStore,
-         listUsers, assignStoreToUser, unassignStoreFromUser, getStoreUsers } from '../../utils/api';
+         listUsers, assignStoreToUser, unassignStoreFromUser, getStoreUsers,
+         getStoreFiles, ownerDeleteFile } from '../../utils/api';
 import ProgressOverlay from './ProgressOverlay';
 import './StoreManagement.css';
 
@@ -12,8 +13,10 @@ function StoreManagement({ selectedProject }) {
   const [showAddFilesModal, setShowAddFilesModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showManageFilesModal, setShowManageFilesModal] = useState(false);
   const [selectedStore, setSelectedStore] = useState(null);
   const [assignedUsers, setAssignedUsers] = useState([]);
+  const [storeFiles, setStoreFiles] = useState([]);
 
   const [uploadFormData, setUploadFormData] = useState({
     display_name: '',
@@ -247,6 +250,33 @@ function StoreManagement({ selectedProject }) {
     return assignedUsers.some(u => u.id === userId);
   };
 
+  // File management handlers
+  const handleManageFiles = async (store) => {
+    setSelectedStore(store);
+    try {
+      const data = await getStoreFiles(store.id);
+      setStoreFiles(data.files);
+      setShowManageFilesModal(true);
+    } catch (err) {
+      alert('Failed to load files: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
+  const handleDeleteFile = async (fileId) => {
+    if (!confirm('Are you sure you want to delete this file?')) return;
+
+    try {
+      await ownerDeleteFile(selectedStore.id, fileId);
+      alert('File deleted successfully!');
+      // Reload files
+      const data = await getStoreFiles(selectedStore.id);
+      setStoreFiles(data.files);
+      loadStores(); // Refresh store list to update file counts
+    } catch (err) {
+      alert('Failed to delete file: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
   return (
     <div className="store-management">
       {uploadProgress.show && (
@@ -298,6 +328,9 @@ function StoreManagement({ selectedProject }) {
               </div>
 
               <div className="store-actions">
+                <button onClick={() => handleManageFiles(store)} className="view-files-btn">
+                  View Files
+                </button>
                 <button onClick={() => handleAddFilesToStore(store)} className="add-files-btn">
                   Add Files
                 </button>
@@ -539,6 +572,52 @@ function StoreManagement({ selectedProject }) {
               <div className="modal-actions">
                 <button onClick={() => setShowAssignModal(false)} className="primary-btn">
                   Done
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manage Files Modal */}
+      {showManageFilesModal && (
+        <div className="modal-overlay" onClick={() => setShowManageFilesModal(false)}>
+          <div className="modal large" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Manage Files - {selectedStore?.display_name}</h3>
+              <button onClick={() => setShowManageFilesModal(false)} className="close-btn">×</button>
+            </div>
+
+            <div className="modal-form">
+              <div className="existing-files-section">
+                <h4>Files in Store ({storeFiles.length})</h4>
+                <div className="files-list">
+                  {storeFiles.length === 0 ? (
+                    <p className="empty-message">No files found</p>
+                  ) : (
+                    storeFiles.map(file => (
+                      <div key={file.id} className="file-row">
+                        <div className="file-info">
+                          <span className="file-name">📄 {file.name}</span>
+                          {file.created_at && (
+                            <span className="file-date">{new Date(file.created_at).toLocaleDateString()}</span>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => handleDeleteFile(file.id)}
+                          className="delete-btn"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <div className="modal-actions">
+                <button onClick={() => setShowManageFilesModal(false)} className="cancel-btn">
+                  Close
                 </button>
               </div>
             </div>

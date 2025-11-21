@@ -982,17 +982,22 @@ def user_list_store_files(store_id):
     try:
         current_user = get_current_user()
 
-        # Verify user has access to this store
-        assignment = db_session.query(StoreAssignment).filter_by(
-            store_id=store_id, user_id=current_user.id
-        ).first()
-
-        if not assignment:
-            return jsonify({"error": "Access denied"}), 403
-
+        # Get store first
         store = db_session.query(Store).filter_by(id=store_id).first()
         if not store:
             return jsonify({"error": "Store not found"}), 404
+
+        # Verify user has access to this store (check both direct and project assignment)
+        store_assignment = db_session.query(StoreAssignment).filter_by(
+            store_id=store_id, user_id=current_user.id
+        ).first()
+
+        project_assignment = db_session.query(ProjectAssignment).filter_by(
+            project_id=store.project_id, user_id=current_user.id
+        ).first()
+
+        if not store_assignment and not project_assignment:
+            return jsonify({"error": "Access denied"}), 403
 
         # Get files from Gemini
         try:
@@ -1024,12 +1029,20 @@ def user_list_sessions(store_id):
     try:
         current_user = get_current_user()
 
-        # Verify user has access to this store
-        assignment = db_session.query(StoreAssignment).filter_by(
+        # Verify user has access to this store (check both direct and project assignment)
+        store = db_session.query(Store).filter_by(id=store_id).first()
+        if not store:
+            return jsonify({"error": "Store not found"}), 404
+
+        store_assignment = db_session.query(StoreAssignment).filter_by(
             store_id=store_id, user_id=current_user.id
         ).first()
 
-        if not assignment:
+        project_assignment = db_session.query(ProjectAssignment).filter_by(
+            project_id=store.project_id, user_id=current_user.id
+        ).first()
+
+        if not store_assignment and not project_assignment:
             return jsonify({"error": "Access denied"}), 403
 
         sessions = db_session.query(ChatSession).filter_by(
@@ -1055,12 +1068,22 @@ def user_create_session(store_id):
         data = request.get_json()
         session_name = data.get('session_name', f"Chat {datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
-        # Verify access
-        assignment = db_session.query(StoreAssignment).filter_by(
+        # Verify access (check both direct store assignment and project assignment)
+        store = db_session.query(Store).filter_by(id=store_id).first()
+        if not store:
+            return jsonify({"error": "Store not found"}), 404
+
+        # Check direct store assignment
+        store_assignment = db_session.query(StoreAssignment).filter_by(
             store_id=store_id, user_id=current_user.id
         ).first()
 
-        if not assignment:
+        # Check project-level assignment
+        project_assignment = db_session.query(ProjectAssignment).filter_by(
+            project_id=store.project_id, user_id=current_user.id
+        ).first()
+
+        if not store_assignment and not project_assignment:
             return jsonify({"error": "Access denied"}), 403
 
         session = ChatSession(
@@ -1250,13 +1273,13 @@ def user_chat(session_id):
 @jwt_required()
 @user_required
 def owner_upload_files_to_store(store_id):
-    """Owner: Upload files to a store they own"""
+    """Owner/Admin: Upload files to a store"""
     try:
         current_user = get_current_user()
 
-        # Check if user has owner access to this store
-        if not has_owner_access(current_user.id, store_id):
-            return jsonify({"error": "Owner access required"}), 403
+        # Check if user is admin or has owner access to this store
+        if current_user.role != 'admin' and not has_owner_access(current_user.id, store_id):
+            return jsonify({"error": "Owner or admin access required"}), 403
 
         # Check if store exists
         store = db_session.query(Store).filter_by(id=store_id).first()
@@ -1310,13 +1333,13 @@ def owner_upload_files_to_store(store_id):
 @jwt_required()
 @user_required
 def owner_delete_file_from_store(store_id, file_id):
-    """Owner: Delete a file from a store they own"""
+    """Owner/Admin: Delete a file from a store"""
     try:
         current_user = get_current_user()
 
-        # Check if user has owner access to this store
-        if not has_owner_access(current_user.id, store_id):
-            return jsonify({"error": "Owner access required"}), 403
+        # Check if user is admin or has owner access to this store
+        if current_user.role != 'admin' and not has_owner_access(current_user.id, store_id):
+            return jsonify({"error": "Owner or admin access required"}), 403
 
         # Check if store exists
         store = db_session.query(Store).filter_by(id=store_id).first()
