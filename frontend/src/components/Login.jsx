@@ -29,7 +29,7 @@ function Login({ onLoginSuccess }) {
       <div className="login-box">
         <div className="login-header">
           <img src={logo} alt="NXSYS Logo" className="login-logo" />
-          <h1>NXSYS File Search</h1>
+          <h1>NXSYS AI CHAT</h1>
           <p>Sign in to your account</p>
         </div>
 
@@ -73,10 +73,6 @@ function Login({ onLoginSuccess }) {
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
-
-        <div className="login-footer">
-          <p>Default admin: <code>admin / admin123</code></p>
-        </div>
       </div>
     </div>
   );
