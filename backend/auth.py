@@ -46,3 +46,30 @@ def get_current_user():
     current_user_id = int(get_jwt_identity())
     from app import db_session
     return db_session.query(User).filter_by(id=current_user_id).first()
+
+
+def has_owner_access(user_id, store_id):
+    """Check if user has owner access to a store (either direct or via project)"""
+    from app import db_session
+    from models import Store, StoreAssignment, ProjectAssignment
+
+    # Get the store
+    store = db_session.query(Store).filter_by(id=store_id).first()
+    if not store:
+        return False
+
+    # Check direct store assignment with owner access
+    store_assignment = db_session.query(StoreAssignment).filter_by(
+        store_id=store_id, user_id=user_id, access_level='owner'
+    ).first()
+    if store_assignment:
+        return True
+
+    # Check project assignment with owner access
+    project_assignment = db_session.query(ProjectAssignment).filter_by(
+        project_id=store.project_id, user_id=user_id, access_level='owner'
+    ).first()
+    if project_assignment:
+        return True
+
+    return False

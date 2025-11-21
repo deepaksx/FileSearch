@@ -99,6 +99,7 @@ class StoreAssignment(Base):
     id = Column(Integer, primary_key=True)
     store_id = Column(Integer, ForeignKey('stores.id'), nullable=False)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    access_level = Column(String(20), nullable=False, default='user')  # 'user' (view) or 'owner' (edit)
     assigned_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
@@ -110,6 +111,7 @@ class StoreAssignment(Base):
             'id': self.id,
             'store_id': self.store_id,
             'user_id': self.user_id,
+            'access_level': self.access_level,
             'assigned_at': self.assigned_at.isoformat() if self.assigned_at else None
         }
 
@@ -120,6 +122,7 @@ class ProjectAssignment(Base):
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, ForeignKey('projects.id'), nullable=False)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    access_level = Column(String(20), nullable=False, default='user')  # 'user' (view) or 'owner' (edit)
     assigned_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
@@ -131,6 +134,7 @@ class ProjectAssignment(Base):
             'id': self.id,
             'project_id': self.project_id,
             'user_id': self.user_id,
+            'access_level': self.access_level,
             'assigned_at': self.assigned_at.isoformat() if self.assigned_at else None
         }
 

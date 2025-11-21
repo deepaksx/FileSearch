@@ -221,9 +221,9 @@ function StoreManagement({ selectedProject }) {
     }
   };
 
-  const handleAssignUser = async (userId) => {
+  const handleAssignUser = async (userId, accessLevel = 'user') => {
     try {
-      await assignStoreToUser(selectedStore.id, userId);
+      await assignStoreToUser(selectedStore.id, userId, accessLevel);
       const data = await getStoreUsers(selectedStore.id);
       setAssignedUsers(data.users);
       loadStores();
@@ -475,20 +475,64 @@ function StoreManagement({ selectedProject }) {
                 {users.length === 0 ? (
                   <p className="empty-message">No users available. Create users first.</p>
                 ) : (
-                  users.map(user => (
-                    <div key={user.id} className="user-assignment-item">
-                      <div className="user-info">
-                        <strong>{user.username}</strong>
-                        <span>{user.email}</span>
+                  users.map(user => {
+                    const assignedUser = assignedUsers.find(u => u.id === user.id);
+                    const currentAccessLevel = assignedUser?.access_level || 'user';
+
+                    return (
+                      <div key={user.id} className="user-assignment-item">
+                        <div className="user-info">
+                          <strong>{user.username}</strong>
+                          <span>{user.email}</span>
+                          {isUserAssigned(user.id) && (
+                            <span className={`access-badge ${currentAccessLevel}`}>
+                              {currentAccessLevel === 'owner' ? '👑 Owner' : '👁️ Viewer'}
+                            </span>
+                          )}
+                        </div>
+                        <div className="user-actions">
+                          {isUserAssigned(user.id) ? (
+                            <>
+                              <select
+                                value={currentAccessLevel}
+                                onChange={(e) => handleAssignUser(user.id, e.target.value)}
+                                className="access-select"
+                              >
+                                <option value="user">Viewer</option>
+                                <option value="owner">Owner</option>
+                              </select>
+                              <button
+                                onClick={() => handleUnassignUser(user.id)}
+                                className="unassign-btn"
+                              >
+                                Remove
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <select
+                                id={`access-${user.id}`}
+                                defaultValue="user"
+                                className="access-select"
+                              >
+                                <option value="user">Viewer</option>
+                                <option value="owner">Owner</option>
+                              </select>
+                              <button
+                                onClick={() => {
+                                  const select = document.getElementById(`access-${user.id}`);
+                                  handleAssignUser(user.id, select.value);
+                                }}
+                                className="assign-user-btn"
+                              >
+                                Grant Access
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </div>
-                      <button
-                        onClick={() => isUserAssigned(user.id) ? handleUnassignUser(user.id) : handleAssignUser(user.id)}
-                        className={isUserAssigned(user.id) ? 'unassign-btn' : 'assign-user-btn'}
-                      >
-                        {isUserAssigned(user.id) ? 'Remove Access' : 'Grant Access'}
-                      </button>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
 

@@ -12,7 +12,7 @@ import time
 from dotenv import load_dotenv
 from sqlalchemy.orm import scoped_session
 from models import init_db, get_session, User, Project, ProjectAssignment, Store, StoreAssignment, ChatSession, Message
-from auth import admin_required, user_required, get_current_user
+from auth import admin_required, user_required, get_current_user, has_owner_access
 
 # Load environment variables
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
@@ -391,13 +391,17 @@ def delete_project(project_id):
 @jwt_required()
 @admin_required
 def assign_project_to_user(project_id):
-    """Admin: Assign a project to a user"""
+    """Admin: Assign a project to a user with access level (user/owner)"""
     try:
         data = request.get_json()
         user_id = data.get('user_id')
+        access_level = data.get('access_level', 'user')  # Default to 'user' (view only)
 
         if not user_id:
             return jsonify({"error": "user_id required"}), 400
+
+        if access_level not in ['user', 'owner']:
+            return jsonify({"error": "access_level must be 'user' or 'owner'"}), 400
 
         project = db_session.query(Project).filter_by(id=project_id).first()
         user = db_session.query(User).filter_by(id=user_id).first()
@@ -411,9 +415,16 @@ def assign_project_to_user(project_id):
         ).first()
 
         if existing:
-            return jsonify({"error": "Project already assigned to user"}), 400
+            # Update access level if already assigned
+            existing.access_level = access_level
+            db_session.commit()
+            return jsonify({
+                "success": True,
+                "message": "Access level updated",
+                "assignment": existing.to_dict()
+            })
 
-        assignment = ProjectAssignment(project_id=project_id, user_id=user_id)
+        assignment = ProjectAssignment(project_id=project_id, user_id=user_id, access_level=access_level)
         db_session.add(assignment)
         db_session.commit()
 
@@ -457,15 +468,22 @@ def unassign_project_from_user(project_id, user_id):
 @jwt_required()
 @admin_required
 def get_project_users(project_id):
-    """Admin: Get users assigned to a project"""
+    """Admin: Get users assigned to a project with their access levels"""
     try:
         assignments = db_session.query(ProjectAssignment).filter_by(project_id=project_id).all()
-        user_ids = [a.user_id for a in assignments]
-        users = db_session.query(User).filter(User.id.in_(user_ids)).all() if user_ids else []
+
+        # Include access level for each user
+        users_with_access = []
+        for assignment in assignments:
+            user = db_session.query(User).filter_by(id=assignment.user_id).first()
+            if user:
+                user_dict = user.to_dict()
+                user_dict['access_level'] = assignment.access_level
+                users_with_access.append(user_dict)
 
         return jsonify({
             "success": True,
-            "users": [u.to_dict() for u in users]
+            "users": users_with_access
         })
 
     except Exception as e:
@@ -580,13 +598,17 @@ def update_store(store_id):
 @jwt_required()
 @admin_required
 def assign_store_to_user(store_id):
-    """Assign a store to a user"""
+    """Assign a store to a user with access level (user/owner)"""
     try:
         data = request.get_json()
         user_id = data.get('user_id')
+        access_level = data.get('access_level', 'user')  # Default to 'user' (view only)
 
         if not user_id:
             return jsonify({"error": "user_id required"}), 400
+
+        if access_level not in ['user', 'owner']:
+            return jsonify({"error": "access_level must be 'user' or 'owner'"}), 400
 
         store = db_session.query(Store).filter_by(id=store_id).first()
         user = db_session.query(User).filter_by(id=user_id).first()
@@ -600,9 +622,16 @@ def assign_store_to_user(store_id):
         ).first()
 
         if existing:
-            return jsonify({"error": "Store already assigned to user"}), 400
+            # Update access level if already assigned
+            existing.access_level = access_level
+            db_session.commit()
+            return jsonify({
+                "success": True,
+                "message": "Access level updated",
+                "assignment": existing.to_dict()
+            })
 
-        assignment = StoreAssignment(store_id=store_id, user_id=user_id)
+        assignment = StoreAssignment(store_id=store_id, user_id=user_id, access_level=access_level)
         db_session.add(assignment)
         db_session.commit()
 
@@ -646,15 +675,22 @@ def unassign_store_from_user(store_id, user_id):
 @jwt_required()
 @admin_required
 def get_store_users(store_id):
-    """Get users assigned to a store"""
+    """Get users assigned to a store with their access levels"""
     try:
         assignments = db_session.query(StoreAssignment).filter_by(store_id=store_id).all()
-        user_ids = [a.user_id for a in assignments]
-        users = db_session.query(User).filter(User.id.in_(user_ids)).all() if user_ids else []
+
+        # Include access level for each user
+        users_with_access = []
+        for assignment in assignments:
+            user = db_session.query(User).filter_by(id=assignment.user_id).first()
+            if user:
+                user_dict = user.to_dict()
+                user_dict['access_level'] = assignment.access_level
+                users_with_access.append(user_dict)
 
         return jsonify({
             "success": True,
-            "users": [u.to_dict() for u in users]
+            "users": users_with_access
         })
 
     except Exception as e:
@@ -836,18 +872,24 @@ def admin_delete_store(store_id):
 @jwt_required()
 @user_required
 def user_list_projects():
-    """End-user: Get list of accessible projects"""
+    """End-user: Get list of accessible projects with access levels"""
     try:
         current_user = get_current_user()
 
         # Get assigned projects
         project_assignments = db_session.query(ProjectAssignment).filter_by(user_id=current_user.id).all()
-        project_ids = [a.project_id for a in project_assignments]
+
+        # Create a map of project_id to access_level
+        access_map = {a.project_id: a.access_level for a in project_assignments}
+        project_ids = list(access_map.keys())
         projects = db_session.query(Project).filter(Project.id.in_(project_ids)).all() if project_ids else []
 
         projects_list = []
         for project in projects:
             project_dict = project.to_dict()
+
+            # Include user's access level for this project
+            project_dict['access_level'] = access_map.get(project.id, 'user')
 
             # Get store count
             store_count = db_session.query(Store).filter_by(project_id=project.id).count()
@@ -868,17 +910,19 @@ def user_list_projects():
 @jwt_required()
 @user_required
 def user_list_stores():
-    """End-user: Get list of accessible stores (from direct assignments and project assignments)"""
+    """End-user: Get list of accessible stores with access levels"""
     try:
         current_user = get_current_user()
 
-        # Get directly assigned stores
+        # Get directly assigned stores with access levels
         store_assignments = db_session.query(StoreAssignment).filter_by(user_id=current_user.id).all()
-        directly_assigned_store_ids = [a.store_id for a in store_assignments]
+        direct_store_access = {a.store_id: a.access_level for a in store_assignments}
+        directly_assigned_store_ids = list(direct_store_access.keys())
 
-        # Get project assigned stores
+        # Get project assigned stores with access levels
         project_assignments = db_session.query(ProjectAssignment).filter_by(user_id=current_user.id).all()
-        assigned_project_ids = [a.project_id for a in project_assignments]
+        project_access = {a.project_id: a.access_level for a in project_assignments}
+        assigned_project_ids = list(project_access.keys())
         project_stores = db_session.query(Store).filter(Store.project_id.in_(assigned_project_ids)).all() if assigned_project_ids else []
         project_store_ids = [s.id for s in project_stores]
 
@@ -889,6 +933,18 @@ def user_list_stores():
         stores_list = []
         for store in stores:
             store_dict = store.to_dict()
+
+            # Determine effective access level (direct assignment takes precedence, or project level)
+            store_direct_access = direct_store_access.get(store.id)
+            project_level_access = project_access.get(store.project_id)
+
+            # If both exist, choose 'owner' if either is owner, otherwise 'user'
+            if store_direct_access and project_level_access:
+                effective_access = 'owner' if (store_direct_access == 'owner' or project_level_access == 'owner') else 'user'
+            else:
+                effective_access = store_direct_access or project_level_access or 'user'
+
+            store_dict['access_level'] = effective_access
 
             # Get project info
             project = db_session.query(Project).filter_by(id=store.project_id).first()
@@ -1185,6 +1241,99 @@ def user_chat(session_id):
 
     except Exception as e:
         db_session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+# ==================== OWNER ENDPOINTS (Edit Store Files) ====================
+
+@app.route('/api/owner/stores/<int:store_id>/upload', methods=['POST'])
+@jwt_required()
+@user_required
+def owner_upload_files_to_store(store_id):
+    """Owner: Upload files to a store they own"""
+    try:
+        current_user = get_current_user()
+
+        # Check if user has owner access to this store
+        if not has_owner_access(current_user.id, store_id):
+            return jsonify({"error": "Owner access required"}), 403
+
+        # Check if store exists
+        store = db_session.query(Store).filter_by(id=store_id).first()
+        if not store:
+            return jsonify({"error": "Store not found"}), 404
+
+        if 'files' not in request.files:
+            return jsonify({"error": "No files provided"}), 400
+
+        files = request.files.getlist('files')
+
+        if not files or files[0].filename == '':
+            return jsonify({"error": "No files selected"}), 400
+
+        uploaded_files = []
+
+        # Upload files to existing store
+        for file in files:
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                file.save(filepath)
+
+                operation = client.file_search_stores.upload_to_file_search_store(
+                    file=filepath,
+                    file_search_store_name=store.gemini_store_id,
+                    config={'display_name': filename}
+                )
+
+                while not operation.done:
+                    time.sleep(1)
+                    operation = client.operations.get(operation)
+
+                uploaded_files.append({"name": filename})
+
+        if not uploaded_files:
+            return jsonify({"error": "No valid files uploaded"}), 400
+
+        return jsonify({
+            "success": True,
+            "store": store.to_dict(),
+            "files": uploaded_files,
+            "message": f"Successfully uploaded {len(uploaded_files)} file(s) to {store.display_name}"
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/owner/stores/<int:store_id>/files/<path:file_id>', methods=['DELETE'])
+@jwt_required()
+@user_required
+def owner_delete_file_from_store(store_id, file_id):
+    """Owner: Delete a file from a store they own"""
+    try:
+        current_user = get_current_user()
+
+        # Check if user has owner access to this store
+        if not has_owner_access(current_user.id, store_id):
+            return jsonify({"error": "Owner access required"}), 403
+
+        # Check if store exists
+        store = db_session.query(Store).filter_by(id=store_id).first()
+        if not store:
+            return jsonify({"error": "Store not found"}), 404
+
+        # Delete file from Gemini
+        try:
+            client.file_search_stores.documents.delete(name=file_id)
+            return jsonify({
+                "success": True,
+                "message": "File deleted successfully"
+            })
+        except Exception as e:
+            return jsonify({"error": f"Failed to delete file: {str(e)}"}), 500
+
+    except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 

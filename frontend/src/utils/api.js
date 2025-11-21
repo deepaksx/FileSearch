@@ -73,9 +73,9 @@ export const deleteProject = async (projectId) => {
   return response.data;
 };
 
-export const assignProjectToUser = async (projectId, userId) => {
+export const assignProjectToUser = async (projectId, userId, accessLevel = 'user') => {
   const response = await axios.post(`${API_BASE_URL}/admin/projects/${projectId}/assign`,
-    { user_id: userId },
+    { user_id: userId, access_level: accessLevel },
     { headers: getAuthHeaders() }
   );
   return response.data;
@@ -171,9 +171,9 @@ export const deleteStore = async (storeId) => {
   return response.data;
 };
 
-export const assignStoreToUser = async (storeId, userId) => {
+export const assignStoreToUser = async (storeId, userId, accessLevel = 'user') => {
   const response = await axios.post(`${API_BASE_URL}/admin/stores/${storeId}/assign`,
-    { user_id: userId },
+    { user_id: userId, access_level: accessLevel },
     { headers: getAuthHeaders() }
   );
   return response.data;
@@ -252,5 +252,22 @@ export const sendMessage = async (sessionId, message) => {
     { message },
     { headers: getAuthHeaders() }
   );
+  return response.data;
+};
+
+// ==================== OWNER - FILE MANAGEMENT ====================
+
+export const ownerUploadFiles = async (storeId, formData, onUploadProgress) => {
+  const response = await axios.post(`${API_BASE_URL}/owner/stores/${storeId}/upload`, formData, {
+    headers: getAuthHeaders(),
+    onUploadProgress: onUploadProgress
+  });
+  return response.data;
+};
+
+export const ownerDeleteFile = async (storeId, fileId) => {
+  const response = await axios.delete(`${API_BASE_URL}/owner/stores/${storeId}/files/${fileId}`, {
+    headers: getAuthHeaders()
+  });
   return response.data;
 };

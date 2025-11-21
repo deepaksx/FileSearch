@@ -4,7 +4,10 @@ import {
   createSession,
   deleteSession,
   getSessionMessages,
-  sendMessage
+  sendMessage,
+  getStoreFiles,
+  ownerUploadFiles,
+  ownerDeleteFile
 } from '../../utils/api';
 import './ChatInterface.css';
 
@@ -154,6 +157,13 @@ function ChatInterface({ store, user }) {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const messagesEndRef = useRef(null);
 
+  // File management state (for owners)
+  const [showFileModal, setShowFileModal] = useState(false);
+  const [files, setFiles] = useState([]);
+  const [uploadFiles, setUploadFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const isOwner = store.access_level === 'owner';
+
   useEffect(() => {
     loadSessions();
   }, [store.id]);
@@ -264,18 +274,80 @@ function ChatInterface({ store, user }) {
     }
   };
 
+  // File management handlers (for owners)
+  const loadFiles = async () => {
+    try {
+      const data = await getStoreFiles(store.id);
+      setFiles(data.files);
+    } catch (err) {
+      console.error('Failed to load files:', err);
+    }
+  };
+
+  const handleManageFiles = () => {
+    loadFiles();
+    setShowFileModal(true);
+  };
+
+  const handleFileSelect = (e) => {
+    setUploadFiles(Array.from(e.target.files));
+  };
+
+  const handleUploadFiles = async () => {
+    if (uploadFiles.length === 0) {
+      alert('Please select files to upload');
+      return;
+    }
+
+    const formData = new FormData();
+    uploadFiles.forEach(file => {
+      formData.append('files', file);
+    });
+
+    setUploading(true);
+    try {
+      await ownerUploadFiles(store.id, formData);
+      alert('Files uploaded successfully!');
+      setUploadFiles([]);
+      loadFiles();
+    } catch (err) {
+      alert('Failed to upload files: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDeleteFile = async (fileId) => {
+    if (!confirm('Are you sure you want to delete this file?')) return;
+
+    try {
+      await ownerDeleteFile(store.id, fileId);
+      alert('File deleted successfully!');
+      loadFiles();
+    } catch (err) {
+      alert('Failed to delete file: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
   return (
     <div className="chat-interface">
       <div className="chat-header">
         <div className="chat-header-left">
           <div>
             <h2>{store.display_name}</h2>
-            <p>{store.file_count} documents available</p>
+            <p>{store.file_count} documents available {isOwner && <span className="owner-badge">👑 Owner</span>}</p>
           </div>
         </div>
-        <button onClick={handleNewSession} className="new-chat-btn">
-          + New Chat Session
-        </button>
+        <div className="chat-header-actions">
+          {isOwner && (
+            <button onClick={handleManageFiles} className="manage-files-btn">
+              📁 Manage Files
+            </button>
+          )}
+          <button onClick={handleNewSession} className="new-chat-btn">
+            + New Chat Session
+          </button>
+        </div>
       </div>
 
       {sessions.length > 0 && (
@@ -383,6 +455,78 @@ function ChatInterface({ store, user }) {
           >
             {loading ? 'Sending...' : 'Send'}
           </button>
+        </div>
+      )}
+
+      {/* File Management Modal (Owner Only) */}
+      {showFileModal && isOwner && (
+        <div className="modal-overlay" onClick={() => setShowFileModal(false)}>
+          <div className="modal large" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Manage Files - {store.display_name}</h3>
+              <button onClick={() => setShowFileModal(false)} className="close-btn">×</button>
+            </div>
+
+            <div className="modal-form">
+              {/* Upload Section */}
+              <div className="file-upload-section">
+                <h4>Upload New Files</h4>
+                <input
+                  type="file"
+                  multiple
+                  onChange={handleFileSelect}
+                  accept=".txt,.pdf,.docx,.md,.json,.py,.js,.csv,.html,.xml"
+                />
+                {uploadFiles.length > 0 && (
+                  <div className="file-list">
+                    {uploadFiles.map((file, idx) => (
+                      <div key={idx} className="file-item">{file.name}</div>
+                    ))}
+                  </div>
+                )}
+                <button
+                  onClick={handleUploadFiles}
+                  disabled={uploading || uploadFiles.length === 0}
+                  className="primary-btn"
+                >
+                  {uploading ? 'Uploading...' : 'Upload Files'}
+                </button>
+              </div>
+
+              {/* Existing Files Section */}
+              <div className="existing-files-section">
+                <h4>Existing Files ({files.length})</h4>
+                <div className="files-list">
+                  {files.length === 0 ? (
+                    <p className="empty-message">No files found</p>
+                  ) : (
+                    files.map(file => (
+                      <div key={file.id} className="file-row">
+                        <div className="file-info">
+                          <span className="file-name">📄 {file.name}</span>
+                          {file.created_at && (
+                            <span className="file-date">{new Date(file.created_at).toLocaleDateString()}</span>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => handleDeleteFile(file.id)}
+                          className="delete-btn"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <div className="modal-actions">
+                <button onClick={() => setShowFileModal(false)} className="cancel-btn">
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
