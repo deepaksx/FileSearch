@@ -987,17 +987,18 @@ def user_list_store_files(store_id):
         if not store:
             return jsonify({"error": "Store not found"}), 404
 
-        # Verify user has access to this store (check both direct and project assignment)
-        store_assignment = db_session.query(StoreAssignment).filter_by(
-            store_id=store_id, user_id=current_user.id
-        ).first()
+        # Verify user has access to this store (admins have access to all stores)
+        if current_user.role != 'admin':
+            store_assignment = db_session.query(StoreAssignment).filter_by(
+                store_id=store_id, user_id=current_user.id
+            ).first()
 
-        project_assignment = db_session.query(ProjectAssignment).filter_by(
-            project_id=store.project_id, user_id=current_user.id
-        ).first()
+            project_assignment = db_session.query(ProjectAssignment).filter_by(
+                project_id=store.project_id, user_id=current_user.id
+            ).first()
 
-        if not store_assignment and not project_assignment:
-            return jsonify({"error": "Access denied"}), 403
+            if not store_assignment and not project_assignment:
+                return jsonify({"error": "Access denied"}), 403
 
         # Get files from Gemini
         try:
@@ -1029,21 +1030,22 @@ def user_list_sessions(store_id):
     try:
         current_user = get_current_user()
 
-        # Verify user has access to this store (check both direct and project assignment)
+        # Verify user has access to this store (admins have access to all stores)
         store = db_session.query(Store).filter_by(id=store_id).first()
         if not store:
             return jsonify({"error": "Store not found"}), 404
 
-        store_assignment = db_session.query(StoreAssignment).filter_by(
-            store_id=store_id, user_id=current_user.id
-        ).first()
+        if current_user.role != 'admin':
+            store_assignment = db_session.query(StoreAssignment).filter_by(
+                store_id=store_id, user_id=current_user.id
+            ).first()
 
-        project_assignment = db_session.query(ProjectAssignment).filter_by(
-            project_id=store.project_id, user_id=current_user.id
-        ).first()
+            project_assignment = db_session.query(ProjectAssignment).filter_by(
+                project_id=store.project_id, user_id=current_user.id
+            ).first()
 
-        if not store_assignment and not project_assignment:
-            return jsonify({"error": "Access denied"}), 403
+            if not store_assignment and not project_assignment:
+                return jsonify({"error": "Access denied"}), 403
 
         sessions = db_session.query(ChatSession).filter_by(
             store_id=store_id, user_id=current_user.id
@@ -1068,23 +1070,24 @@ def user_create_session(store_id):
         data = request.get_json()
         session_name = data.get('session_name', f"Chat {datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
-        # Verify access (check both direct store assignment and project assignment)
+        # Verify access (admins have access to all stores)
         store = db_session.query(Store).filter_by(id=store_id).first()
         if not store:
             return jsonify({"error": "Store not found"}), 404
 
-        # Check direct store assignment
-        store_assignment = db_session.query(StoreAssignment).filter_by(
-            store_id=store_id, user_id=current_user.id
-        ).first()
+        if current_user.role != 'admin':
+            # Check direct store assignment
+            store_assignment = db_session.query(StoreAssignment).filter_by(
+                store_id=store_id, user_id=current_user.id
+            ).first()
 
-        # Check project-level assignment
-        project_assignment = db_session.query(ProjectAssignment).filter_by(
-            project_id=store.project_id, user_id=current_user.id
-        ).first()
+            # Check project-level assignment
+            project_assignment = db_session.query(ProjectAssignment).filter_by(
+                project_id=store.project_id, user_id=current_user.id
+            ).first()
 
-        if not store_assignment and not project_assignment:
-            return jsonify({"error": "Access denied"}), 403
+            if not store_assignment and not project_assignment:
+                return jsonify({"error": "Access denied"}), 403
 
         session = ChatSession(
             store_id=store_id,
