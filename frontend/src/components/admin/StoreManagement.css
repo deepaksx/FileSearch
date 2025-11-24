@@ -15,6 +15,8 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   transition: all 0.15s;
   border: 1px solid #e2e8f0;
+  overflow: visible;
+  position: relative;
 }
 
 .store-card:hover {
@@ -66,9 +68,68 @@
   border-top: 1px solid #e2e8f0;
 }
 
-.store-actions {
+.store-actions-dropdown {
+  position: relative;
+}
+
+.actions-dropdown-btn {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.actions-dropdown-btn:hover {
+  background: #5a67d8;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 0.25rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.dropdown-item {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: white;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1e293b;
+  transition: background 0.15s;
   display: flex;
-  gap: 0.4rem;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dropdown-item:hover {
+  background: #f8fafc;
+}
+
+.dropdown-item.delete {
+  color: #dc2626;
+}
+
+.dropdown-item.delete:hover {
+  background: #fee2e2;
 }
 
 .add-files-btn {
@@ -220,4 +281,155 @@
   padding: 3rem 2rem;
   color: #64748b;
   font-size: 1rem;
+}
+
+/* Chat Modal Styles */
+.chat-modal .chat-interface {
+  height: 100% !important;
+  max-height: 100%;
+}
+
+/* File management buttons */
+.manage-files-btn {
+  padding: 0.5rem 0.25rem;
+  background: #dbeafe;
+  color: #1e40af;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 600;
+  transition: all 0.15s;
+  white-space: nowrap;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.manage-files-btn:hover {
+  background: #bfdbfe;
+}
+
+.chat-btn {
+  padding: 0.5rem 0.25rem;
+  background: #e0e7ff;
+  color: #4338ca;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 600;
+  transition: all 0.15s;
+  white-space: nowrap;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-btn:hover {
+  background: #c7d2fe;
+}
+
+.edit-btn {
+  padding: 0.5rem 0.25rem;
+  background: #fef3c7;
+  color: #92400e;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 600;
+  transition: all 0.15s;
+  white-space: nowrap;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.edit-btn:hover {
+  background: #fde68a;
+}
+
+.delete-btn {
+  padding: 0.5rem 0.25rem;
+  background: #fee2e2;
+  color: #991b1b;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 600;
+  transition: all 0.15s;
+  white-space: nowrap;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.delete-btn:hover {
+  background: #fecaca;
+}
+
+/* File upload section in manage files modal */
+.file-upload-section {
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.file-upload-section h4 {
+  margin: 0 0 1rem 0;
+  color: #1e293b;
+  font-size: 1rem;
+}
+
+.existing-files-section h4 {
+  margin: 0 0 1rem 0;
+  color: #1e293b;
+  font-size: 1rem;
+}
+
+.files-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.file-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.875rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+  transition: all 0.15s;
+}
+
+.file-row:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.file-row:last-child {
+  margin-bottom: 0;
+}
+
+.file-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.file-name {
+  color: #1e293b;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.file-date {
+  color: #94a3b8;
+  font-size: 0.75rem;
 }

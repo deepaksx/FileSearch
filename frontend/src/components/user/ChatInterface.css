@@ -56,6 +56,23 @@
   box-shadow: 0 2px 8px rgba(201, 39, 75, 0.3);
 }
 
+.history-btn {
+  padding: 0.5rem 1rem;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.history-btn:hover {
+  background: #e2e8f0;
+  border-color: #94a3b8;
+}
+
 .session-tabs {
   background: white;
   border-bottom: 1px solid #e2e8f0;

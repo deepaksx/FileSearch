@@ -12,6 +12,7 @@ function ProjectManagement({ onProjectSelect }) {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [assignedUsers, setAssignedUsers] = useState([]);
+  const [openDropdown, setOpenDropdown] = useState(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -22,6 +23,17 @@ function ProjectManagement({ onProjectSelect }) {
     loadProjects();
     loadUsers();
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (openDropdown && !event.target.closest('.project-actions-dropdown')) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [openDropdown]);
 
   const loadProjects = async () => {
     try {
@@ -162,19 +174,32 @@ function ProjectManagement({ onProjectSelect }) {
                 <small>Created: {new Date(project.created_at).toLocaleDateString()}</small>
               </div>
 
-              <div className="project-actions">
-                <button onClick={() => onProjectSelect(project)} className="view-stores-btn">
-                  View Stores
+              <div className="project-actions-dropdown">
+                <button
+                  className="actions-dropdown-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenDropdown(openDropdown === project.id ? null : project.id);
+                  }}
+                >
+                  Actions ▼
                 </button>
-                <button onClick={() => handleEditProject(project)} className="edit-btn">
-                  Edit
-                </button>
-                <button onClick={() => handleManageAssignments(project)} className="assign-btn">
-                  Manage Users
-                </button>
-                <button onClick={() => handleDeleteProject(project.id)} className="delete-btn">
-                  Delete
-                </button>
+                {openDropdown === project.id && (
+                  <div className="dropdown-menu">
+                    <button onClick={() => { onProjectSelect(project); setOpenDropdown(null); }} className="dropdown-item">
+                      📁 View Stores
+                    </button>
+                    <button onClick={() => { handleEditProject(project); setOpenDropdown(null); }} className="dropdown-item">
+                      ✏️ Edit
+                    </button>
+                    <button onClick={() => { handleManageAssignments(project); setOpenDropdown(null); }} className="dropdown-item">
+                      👥 Manage Users
+                    </button>
+                    <button onClick={() => { handleDeleteProject(project.id); setOpenDropdown(null); }} className="dropdown-item delete">
+                      🗑️ Delete
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))}

@@ -148,7 +148,7 @@ const formatInlineStyles = (text) => {
     .replace(/`(.+?)`/g, '<code>$1</code>');
 };
 
-function ChatInterface({ store, user }) {
+function ChatInterface({ store, user, hideHeader = false, headerActions = null }) {
   const [sessions, setSessions] = useState([]);
   const [activeSession, setActiveSession] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -162,7 +162,22 @@ function ChatInterface({ store, user }) {
   const [files, setFiles] = useState([]);
   const [uploadFiles, setUploadFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const isOwner = store.access_level === 'owner';
+
+  // Expose handlers for external header rendering
+  useEffect(() => {
+    if (headerActions) {
+      headerActions({
+        sessions,
+        showHistory,
+        setShowHistory,
+        isOwner,
+        handleNewSession,
+        handleManageFiles
+      });
+    }
+  }, [sessions, showHistory, isOwner]);
 
   useEffect(() => {
     loadSessions();
@@ -331,26 +346,33 @@ function ChatInterface({ store, user }) {
 
   return (
     <div className="chat-interface">
-      <div className="chat-header">
-        <div className="chat-header-left">
-          <div>
-            <h2>{store.display_name}</h2>
-            <p>{store.file_count} documents available {isOwner && <span className="owner-badge">👑 Owner</span>}</p>
+      {!hideHeader && (
+        <div className="chat-header">
+          <div className="chat-header-left">
+            <div>
+              <h2>{store.display_name}</h2>
+              <p>{store.file_count} documents available {isOwner && <span className="owner-badge">👑 Owner</span>}</p>
+            </div>
+          </div>
+          <div className="chat-header-actions">
+            {sessions.length > 0 && (
+              <button onClick={() => setShowHistory(!showHistory)} className="history-btn">
+                📜 {showHistory ? 'Hide' : 'Show'} History ({sessions.length})
+              </button>
+            )}
+            {isOwner && (
+              <button onClick={handleManageFiles} className="manage-files-btn">
+                📁 Manage Files
+              </button>
+            )}
+            <button onClick={handleNewSession} className="new-chat-btn">
+              + New Chat Session
+            </button>
           </div>
         </div>
-        <div className="chat-header-actions">
-          {isOwner && (
-            <button onClick={handleManageFiles} className="manage-files-btn">
-              📁 Manage Files
-            </button>
-          )}
-          <button onClick={handleNewSession} className="new-chat-btn">
-            + New Chat Session
-          </button>
-        </div>
-      </div>
+      )}
 
-      {sessions.length > 0 && (
+      {showHistory && sessions.length > 0 && (
         <div className="session-tabs">
           <div className="session-tabs-scroll">
             {sessions.map(session => (
@@ -508,12 +530,6 @@ function ChatInterface({ store, user }) {
                             <span className="file-date">{new Date(file.created_at).toLocaleDateString()}</span>
                           )}
                         </div>
-                        <button
-                          onClick={() => handleDeleteFile(file.id)}
-                          className="delete-btn"
-                        >
-                          Delete
-                        </button>
                       </div>
                     ))
                   )}

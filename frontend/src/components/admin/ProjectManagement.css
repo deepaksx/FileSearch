@@ -15,6 +15,8 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   transition: all 0.15s;
   border: 1px solid #e2e8f0;
+  overflow: visible;
+  position: relative;
 }
 
 .project-card:hover {
@@ -97,4 +99,69 @@
   font-size: 0.875rem;
   margin-bottom: 1rem;
   border-left: 3px solid #3b82f6;
+}
+
+/* Dropdown styles */
+.project-actions-dropdown {
+  position: relative;
+}
+
+.actions-dropdown-btn {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.actions-dropdown-btn:hover {
+  background: #5a67d8;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 0.25rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.dropdown-item {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: white;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1e293b;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dropdown-item:hover {
+  background: #f8fafc;
+}
+
+.dropdown-item.delete {
+  color: #dc2626;
+}
+
+.dropdown-item.delete:hover {
+  background: #fee2e2;
 }

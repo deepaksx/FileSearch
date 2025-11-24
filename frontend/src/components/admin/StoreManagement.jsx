@@ -10,21 +10,19 @@ function StoreManagement({ selectedProject }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [showAddFilesModal, setShowAddFilesModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showManageFilesModal, setShowManageFilesModal] = useState(false);
   const [selectedStore, setSelectedStore] = useState(null);
   const [assignedUsers, setAssignedUsers] = useState([]);
   const [storeFiles, setStoreFiles] = useState([]);
+  const [manageFilesUpload, setManageFilesUpload] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState(null);
 
   const [uploadFormData, setUploadFormData] = useState({
     display_name: '',
     description: '',
-    files: []
-  });
-
-  const [addFilesFormData, setAddFilesFormData] = useState({
     files: []
   });
 
@@ -44,6 +42,17 @@ function StoreManagement({ selectedProject }) {
     loadStores();
     loadUsers();
   }, [selectedProject]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (openDropdown && !event.target.closest('.store-actions-dropdown')) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [openDropdown]);
 
   const loadStores = async () => {
     if (!selectedProject) {
@@ -119,59 +128,6 @@ function StoreManagement({ selectedProject }) {
       alert('Store created successfully!');
       setShowUploadModal(false);
       setUploadFormData({ display_name: '', description: '', files: [] });
-      setUploadProgress({ show: false, progress: 0, fileCount: 0, currentFile: '' });
-      loadStores();
-    } catch (err) {
-      setUploadProgress({ show: false, progress: 0, fileCount: 0, currentFile: '' });
-      alert('Failed to upload files: ' + (err.response?.data?.error || err.message));
-    }
-  };
-
-  const handleAddFilesToStore = (store) => {
-    setSelectedStore(store);
-    setAddFilesFormData({ files: [] });
-    setShowAddFilesModal(true);
-  };
-
-  const handleAddFilesChange = (e) => {
-    setAddFilesFormData({
-      files: Array.from(e.target.files)
-    });
-  };
-
-  const handleAddFilesSubmit = async (e) => {
-    e.preventDefault();
-
-    if (addFilesFormData.files.length === 0) {
-      alert('Please select files to upload');
-      return;
-    }
-
-    const formData = new FormData();
-    addFilesFormData.files.forEach(file => {
-      formData.append('files', file);
-    });
-
-    // Show progress overlay
-    setUploadProgress({
-      show: true,
-      progress: 0,
-      fileCount: addFilesFormData.files.length,
-      currentFile: addFilesFormData.files[0]?.name || ''
-    });
-
-    try {
-      await uploadFilesToStore(selectedStore.id, formData, (progressEvent) => {
-        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-        setUploadProgress(prev => ({
-          ...prev,
-          progress: percentCompleted
-        }));
-      });
-
-      alert('Files uploaded successfully!');
-      setShowAddFilesModal(false);
-      setAddFilesFormData({ files: [] });
       setUploadProgress({ show: false, progress: 0, fileCount: 0, currentFile: '' });
       loadStores();
     } catch (err) {
@@ -277,6 +233,39 @@ function StoreManagement({ selectedProject }) {
     }
   };
 
+  const handleManageFilesUpload = async () => {
+    if (manageFilesUpload.length === 0) {
+      alert('Please select files to upload');
+      return;
+    }
+
+    const formData = new FormData();
+    manageFilesUpload.forEach(file => {
+      formData.append('files', file);
+    });
+
+    setUploading(true);
+    try {
+      await uploadFilesToStore(selectedStore.id, formData);
+      alert('Files uploaded successfully!');
+      setManageFilesUpload([]);
+      // Reload files
+      const data = await getStoreFiles(selectedStore.id);
+      setStoreFiles(data.files);
+      loadStores();
+    } catch (err) {
+      alert('Failed to upload files: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleChatWithStore = (store) => {
+    // Open chat in a new tab with query parameter
+    const chatUrl = `${window.location.origin}?chat=${store.id}`;
+    window.open(chatUrl, '_blank');
+  };
+
   return (
     <div className="store-management">
       {uploadProgress.show && (
@@ -327,22 +316,35 @@ function StoreManagement({ selectedProject }) {
                 <small>Created: {new Date(store.created_at).toLocaleDateString()}</small>
               </div>
 
-              <div className="store-actions">
-                <button onClick={() => handleManageFiles(store)} className="view-files-btn">
-                  View Files
+              <div className="store-actions-dropdown">
+                <button
+                  className="actions-dropdown-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenDropdown(openDropdown === store.id ? null : store.id);
+                  }}
+                >
+                  Actions ▼
                 </button>
-                <button onClick={() => handleAddFilesToStore(store)} className="add-files-btn">
-                  Add Files
-                </button>
-                <button onClick={() => handleEditStore(store)} className="edit-btn">
-                  Edit
-                </button>
-                <button onClick={() => handleManageAssignments(store)} className="assign-btn">
-                  Manage Users
-                </button>
-                <button onClick={() => handleDeleteStore(store.id)} className="delete-btn">
-                  Delete
-                </button>
+                {openDropdown === store.id && (
+                  <div className="dropdown-menu">
+                    <button onClick={() => { handleManageFiles(store); setOpenDropdown(null); }} className="dropdown-item">
+                      📁 Manage Files
+                    </button>
+                    <button onClick={() => { handleChatWithStore(store); setOpenDropdown(null); }} className="dropdown-item">
+                      💬 Chat
+                    </button>
+                    <button onClick={() => { handleEditStore(store); setOpenDropdown(null); }} className="dropdown-item">
+                      ✏️ Edit
+                    </button>
+                    <button onClick={() => { handleManageAssignments(store); setOpenDropdown(null); }} className="dropdown-item">
+                      👥 Manage Users
+                    </button>
+                    <button onClick={() => { handleDeleteStore(store.id); setOpenDropdown(null); }} className="dropdown-item delete">
+                      🗑️ Delete
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -404,47 +406,6 @@ function StoreManagement({ selectedProject }) {
                 </button>
                 <button type="submit" className="primary-btn">
                   Upload & Create Store
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Add Files to Existing Store Modal */}
-      {showAddFilesModal && (
-        <div className="modal-overlay" onClick={() => setShowAddFilesModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Add Files to {selectedStore?.display_name}</h3>
-              <button onClick={() => setShowAddFilesModal(false)} className="close-btn">×</button>
-            </div>
-
-            <form onSubmit={handleAddFilesSubmit} className="modal-form">
-              <div className="form-group">
-                <label>Files * (txt, pdf, docx, md, json, py, js, csv, html, xml)</label>
-                <input
-                  type="file"
-                  multiple
-                  onChange={handleAddFilesChange}
-                  accept=".txt,.pdf,.docx,.md,.json,.py,.js,.csv,.html,.xml"
-                  required
-                />
-                {addFilesFormData.files.length > 0 && (
-                  <div className="file-list">
-                    {addFilesFormData.files.map((file, idx) => (
-                      <div key={idx} className="file-item">{file.name}</div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="modal-actions">
-                <button type="button" onClick={() => setShowAddFilesModal(false)} className="cancel-btn">
-                  Cancel
-                </button>
-                <button type="submit" className="primary-btn">
-                  Upload Files
                 </button>
               </div>
             </form>
@@ -589,6 +550,38 @@ function StoreManagement({ selectedProject }) {
             </div>
 
             <div className="modal-form">
+              {/* Upload New Files Section */}
+              <div className="file-upload-section">
+                <h4>Upload New Files</h4>
+                <div className="form-group">
+                  <input
+                    type="file"
+                    multiple
+                    onChange={(e) => setManageFilesUpload(Array.from(e.target.files))}
+                    accept=".txt,.pdf,.docx,.md,.json,.py,.js,.csv,.html,.xml"
+                  />
+                  {manageFilesUpload.length > 0 && (
+                    <div className="file-list">
+                      {manageFilesUpload.map((file, idx) => (
+                        <div key={idx} className="file-item">{file.name}</div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {manageFilesUpload.length > 0 && (
+                  <button
+                    onClick={handleManageFilesUpload}
+                    disabled={uploading}
+                    className="primary-btn"
+                  >
+                    {uploading ? 'Uploading...' : `Upload ${manageFilesUpload.length} File(s)`}
+                  </button>
+                )}
+              </div>
+
+              <hr style={{ margin: '20px 0', border: '1px solid #ddd' }} />
+
+              {/* Existing Files Section */}
               <div className="existing-files-section">
                 <h4>Files in Store ({storeFiles.length})</h4>
                 <div className="files-list">
@@ -603,12 +596,6 @@ function StoreManagement({ selectedProject }) {
                             <span className="file-date">{new Date(file.created_at).toLocaleDateString()}</span>
                           )}
                         </div>
-                        <button
-                          onClick={() => handleDeleteFile(file.id)}
-                          className="delete-btn"
-                        >
-                          Delete
-                        </button>
                       </div>
                     ))
                   )}
