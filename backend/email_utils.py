@@ -11,6 +11,12 @@ def init_mail(app):
     """Initialize Flask-Mail with app config"""
     global mail
 
+    # Check if email is configured
+    if not os.getenv('MAIL_USERNAME') or not os.getenv('MAIL_PASSWORD'):
+        print("⚠️  WARNING: Email not configured. OTP features will not work.")
+        print("   Set MAIL_USERNAME and MAIL_PASSWORD environment variables to enable email.")
+        return None
+
     app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
     app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
     app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'True').lower() == 'true'
@@ -20,6 +26,7 @@ def init_mail(app):
     app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER', os.getenv('MAIL_USERNAME'))
 
     mail = Mail(app)
+    print("✅ Email configured successfully")
     return mail
 
 
