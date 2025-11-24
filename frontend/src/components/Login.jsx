@@ -3,7 +3,7 @@ import { login } from '../utils/api';
 import logo from '../assets/logo.png';
 import './Login.css';
 
-function Login({ onLoginSuccess }) {
+function Login({ onLoginSuccess, onForgotPassword }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -41,13 +41,13 @@ function Login({ onLoginSuccess }) {
           )}
 
           <div className="form-group">
-            <label htmlFor="username">Username</label>
+            <label htmlFor="username">Username or Email</label>
             <input
               type="text"
               id="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter your username"
+              placeholder="Enter your username or email"
               required
               autoFocus
             />
@@ -72,6 +72,25 @@ function Login({ onLoginSuccess }) {
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
+
+          {onForgotPassword && (
+            <div style={{ marginTop: '15px', textAlign: 'center' }}>
+              <button
+                type="button"
+                onClick={onForgotPassword}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#007bff',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  fontSize: '14px'
+                }}
+              >
+                Forgot Password?
+              </button>
+            </div>
+          )}
         </form>
       </div>
     </div>

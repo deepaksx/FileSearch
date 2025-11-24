@@ -43,6 +43,39 @@ export const isAuthenticated = () => {
   return !!localStorage.getItem('token');
 };
 
+// ==================== OTP AUTHENTICATION ====================
+
+export const sendVerificationOTP = async (email) => {
+  const response = await axios.post(`${API_BASE_URL}/auth/send-verification-otp`, {
+    email
+  });
+  return response.data;
+};
+
+export const verifyEmail = async (email, otpCode) => {
+  const response = await axios.post(`${API_BASE_URL}/auth/verify-email`, {
+    email,
+    otp_code: otpCode
+  });
+  return response.data;
+};
+
+export const requestPasswordReset = async (email) => {
+  const response = await axios.post(`${API_BASE_URL}/auth/request-password-reset`, {
+    email
+  });
+  return response.data;
+};
+
+export const resetPassword = async (email, otpCode, newPassword) => {
+  const response = await axios.post(`${API_BASE_URL}/auth/reset-password`, {
+    email,
+    otp_code: otpCode,
+    new_password: newPassword
+  });
+  return response.data;
+};
+
 // ==================== ADMIN - PROJECT MANAGEMENT ====================
 
 export const listProjects = async () => {

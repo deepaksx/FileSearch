@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 from sqlalchemy.orm import scoped_session
 from models import init_db, get_session, User, Project, ProjectAssignment, Store, StoreAssignment, ChatSession, Message
 from auth import admin_required, user_required, get_current_user, has_owner_access
+from email_utils import init_mail, send_otp_email
 
 # Load environment variables
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
@@ -65,6 +66,9 @@ from sqlalchemy.orm import sessionmaker
 Session = sessionmaker(bind=engine)
 db_session = scoped_session(Session)
 
+# Initialize email
+init_mail(app)
+
 # Auto-create admin user on startup if it doesn't exist
 def ensure_admin_exists():
     """Automatically create admin user if it doesn't exist"""
@@ -83,13 +87,13 @@ def ensure_admin_exists():
             )
             session.add(admin_user)
             session.commit()
-            print("✓ Admin user created automatically (username: admin, password: admin123)")
+            print("[OK] Admin user created automatically (username: admin, password: admin123)")
         else:
-            print("✓ Admin user already exists")
+            print("[OK] Admin user already exists")
 
         session.close()
     except Exception as e:
-        print(f"⚠ Admin user creation skipped: {str(e)}")
+        print(f"[WARNING] Admin user creation skipped: {str(e)}")
 
 # Run admin creation check on startup
 ensure_admin_exists()
@@ -106,19 +110,32 @@ def allowed_file(filename):
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():
-    """Login endpoint"""
+    """Login endpoint - supports username or email"""
     try:
         data = request.get_json()
         username = data.get('username')
         password = data.get('password')
 
         if not username or not password:
-            return jsonify({"error": "Username and password required"}), 400
+            return jsonify({"error": "Username/email and password required"}), 400
 
+        # Try to find user by username first, then by email
         user = db_session.query(User).filter_by(username=username).first()
+
+        # If not found by username, try email
+        if not user:
+            user = db_session.query(User).filter_by(email=username).first()
 
         if not user or not user.check_password(password):
             return jsonify({"error": "Invalid credentials"}), 401
+
+        # Check if email is verified (optional - can be enforced by uncommenting)
+        # if not user.email_verified and user.role != 'admin':
+        #     return jsonify({
+        #         "error": "Email not verified",
+        #         "email_verified": False,
+        #         "email": user.email
+        #     }), 403
 
         access_token = create_access_token(identity=str(user.id))
 
@@ -147,6 +164,149 @@ def get_current_user_info():
         })
 
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/auth/send-verification-otp', methods=['POST'])
+def send_verification_otp():
+    """Send OTP to user's email for verification"""
+    try:
+        data = request.get_json()
+        email = data.get('email')
+
+        if not email:
+            return jsonify({"error": "Email required"}), 400
+
+        user = db_session.query(User).filter_by(email=email).first()
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        if user.email_verified:
+            return jsonify({"error": "Email already verified"}), 400
+
+        # Generate and save OTP
+        otp_code = user.generate_otp()
+        db_session.commit()
+
+        # Send OTP via email
+        if send_otp_email(email, otp_code, purpose='verification'):
+            return jsonify({
+                "success": True,
+                "message": "Verification code sent to your email"
+            })
+        else:
+            return jsonify({"error": "Failed to send email. Please try again."}), 500
+
+    except Exception as e:
+        db_session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/auth/verify-email', methods=['POST'])
+def verify_email():
+    """Verify user's email with OTP"""
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        otp_code = data.get('otp_code')
+
+        if not email or not otp_code:
+            return jsonify({"error": "Email and OTP code required"}), 400
+
+        user = db_session.query(User).filter_by(email=email).first()
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        if user.email_verified:
+            return jsonify({"error": "Email already verified"}), 400
+
+        # Verify OTP
+        if user.verify_otp(otp_code):
+            user.email_verified = True
+            user.clear_otp()
+            db_session.commit()
+
+            return jsonify({
+                "success": True,
+                "message": "Email verified successfully"
+            })
+        else:
+            return jsonify({"error": "Invalid or expired OTP code"}), 400
+
+    except Exception as e:
+        db_session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/auth/request-password-reset', methods=['POST'])
+def request_password_reset():
+    """Request password reset - sends OTP to email"""
+    try:
+        data = request.get_json()
+        email = data.get('email')
+
+        if not email:
+            return jsonify({"error": "Email required"}), 400
+
+        user = db_session.query(User).filter_by(email=email).first()
+        if not user:
+            # Don't reveal if user exists or not for security
+            return jsonify({
+                "success": True,
+                "message": "If the email exists, a reset code has been sent"
+            })
+
+        # Generate and save OTP
+        otp_code = user.generate_otp()
+        db_session.commit()
+
+        # Send OTP via email
+        send_otp_email(email, otp_code, purpose='reset')
+
+        return jsonify({
+            "success": True,
+            "message": "If the email exists, a reset code has been sent"
+        })
+
+    except Exception as e:
+        db_session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/auth/reset-password', methods=['POST'])
+def reset_password():
+    """Reset password with OTP verification"""
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        otp_code = data.get('otp_code')
+        new_password = data.get('new_password')
+
+        if not email or not otp_code or not new_password:
+            return jsonify({"error": "Email, OTP code, and new password required"}), 400
+
+        if len(new_password) < 6:
+            return jsonify({"error": "Password must be at least 6 characters"}), 400
+
+        user = db_session.query(User).filter_by(email=email).first()
+        if not user:
+            return jsonify({"error": "Invalid OTP code"}), 400
+
+        # Verify OTP
+        if user.verify_otp(otp_code):
+            user.set_password(new_password)
+            user.clear_otp()
+            db_session.commit()
+
+            return jsonify({
+                "success": True,
+                "message": "Password reset successfully"
+            })
+        else:
+            return jsonify({"error": "Invalid or expired OTP code"}), 400
+
+    except Exception as e:
+        db_session.rollback()
         return jsonify({"error": str(e)}), 500
 
 
@@ -559,6 +719,25 @@ def admin_list_project_stores(project_id):
         return jsonify({
             "success": True,
             "stores": stores_list
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/admin/stores/<int:store_id>', methods=['GET'])
+@jwt_required()
+@admin_required
+def get_store(store_id):
+    """Get a single store's details"""
+    try:
+        store = db_session.query(Store).filter_by(id=store_id).first()
+        if not store:
+            return jsonify({"error": "Store not found"}), 404
+
+        return jsonify({
+            "success": True,
+            "store": store.to_dict()
         })
 
     except Exception as e:
@@ -1357,7 +1536,14 @@ def owner_delete_file_from_store(store_id, file_id):
                 "message": "File deleted successfully"
             })
         except Exception as e:
-            return jsonify({"error": f"Failed to delete file: {str(e)}"}), 500
+            error_msg = str(e)
+            # Check if it's the "non-empty document" error
+            if "non-empty" in error_msg.lower() or "FAILED_PRECONDITION" in error_msg:
+                return jsonify({
+                    "error": "Google Gemini File Search API does not currently support deleting individual documents from a store. To remove files, you'll need to delete and recreate the entire store."
+                }), 400
+            else:
+                return jsonify({"error": f"Failed to delete file: {error_msg}"}), 500
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500

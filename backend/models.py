@@ -15,6 +15,9 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     email = Column(String(120), unique=True, nullable=False)
     role = Column(String(20), nullable=False, default='user')  # 'admin' or 'user'
+    email_verified = Column(Boolean, default=False, nullable=False)
+    otp_code = Column(String(6), nullable=True)
+    otp_created_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
@@ -30,12 +33,41 @@ class User(Base):
         """Check if the provided password matches the hash"""
         return bcrypt.checkpw(password.encode('utf-8'), self.password_hash.encode('utf-8'))
 
+    def generate_otp(self):
+        """Generate a 6-digit OTP and set expiry"""
+        import random
+        self.otp_code = str(random.randint(100000, 999999))
+        self.otp_created_at = datetime.utcnow()
+        return self.otp_code
+
+    def verify_otp(self, otp_code):
+        """Verify OTP code and check if it's still valid (15 minutes)"""
+        if not self.otp_code or not self.otp_created_at:
+            return False
+
+        # Check if OTP matches
+        if self.otp_code != otp_code:
+            return False
+
+        # Check if OTP is still valid (15 minutes)
+        from datetime import timedelta
+        if datetime.utcnow() - self.otp_created_at > timedelta(minutes=15):
+            return False
+
+        return True
+
+    def clear_otp(self):
+        """Clear OTP after successful verification"""
+        self.otp_code = None
+        self.otp_created_at = None
+
     def to_dict(self):
         return {
             'id': self.id,
             'username': self.username,
             'email': self.email,
             'role': self.role,
+            'email_verified': self.email_verified,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
