@@ -316,12 +316,45 @@ def reset_password():
 @jwt_required()
 @admin_required
 def list_users():
-    """List all users"""
+    """List all users with their project and store access"""
     try:
         users = db_session.query(User).all()
+        users_list = []
+
+        for user in users:
+            user_dict = user.to_dict()
+
+            # Get project assignments for this user
+            project_assignments = db_session.query(ProjectAssignment).filter_by(user_id=user.id).all()
+            projects_access = []
+            for pa in project_assignments:
+                project = db_session.query(Project).filter_by(id=pa.project_id).first()
+                if project:
+                    projects_access.append({
+                        'id': project.id,
+                        'name': project.name,
+                        'access_level': pa.access_level
+                    })
+
+            # Get store assignments for this user (direct assignments only)
+            store_assignments = db_session.query(StoreAssignment).filter_by(user_id=user.id).all()
+            stores_access = []
+            for sa in store_assignments:
+                store = db_session.query(Store).filter_by(id=sa.store_id).first()
+                if store:
+                    stores_access.append({
+                        'id': store.id,
+                        'name': store.display_name,
+                        'access_level': sa.access_level
+                    })
+
+            user_dict['projects_access'] = projects_access
+            user_dict['stores_access'] = stores_access
+            users_list.append(user_dict)
+
         return jsonify({
             "success": True,
-            "users": [u.to_dict() for u in users]
+            "users": users_list
         })
 
     except Exception as e:

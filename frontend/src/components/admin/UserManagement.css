@@ -260,6 +260,93 @@
   flex: 1;
 }
 
+/* Access Info Styles */
+.access-cell {
+  min-width: 200px;
+  max-width: 350px;
+}
+
+.access-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.access-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.access-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.access-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.access-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.access-tag.project {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.access-tag.project.owner {
+  background: #c7d2fe;
+  color: #3730a3;
+}
+
+.access-tag.store {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.access-tag.store.owner {
+  background: #a7f3d0;
+  color: #064e3b;
+}
+
+.owner-badge {
+  color: #f59e0b;
+  font-size: 0.65rem;
+}
+
+.access-badge {
+  display: inline-block;
+  padding: 0.25rem 0.625rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.access-badge.admin-access {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.no-access {
+  color: #94a3b8;
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
 /* Mobile Responsive Styles for User Management */
 @media (max-width: 768px) {
   .section-header {
@@ -287,7 +374,21 @@
   }
 
   .data-table {
-    min-width: 600px;
+    min-width: 750px;
+  }
+
+  .access-cell {
+    min-width: 150px;
+    max-width: 200px;
+  }
+
+  .access-tag {
+    font-size: 0.65rem;
+    padding: 0.15rem 0.4rem;
+  }
+
+  .access-label {
+    font-size: 0.6rem;
   }
 
   .data-table th,

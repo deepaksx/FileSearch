@@ -100,6 +100,7 @@ function UserManagement() {
                 <th>Username</th>
                 <th>Email</th>
                 <th>Role</th>
+                <th>Access</th>
                 <th>Created</th>
                 <th>Actions</th>
               </tr>
@@ -113,6 +114,43 @@ function UserManagement() {
                     <span className={`role-badge ${user.role}`}>
                       {user.role}
                     </span>
+                  </td>
+                  <td className="access-cell">
+                    {user.role === 'admin' ? (
+                      <span className="access-badge admin-access">All Access</span>
+                    ) : (
+                      <div className="access-info">
+                        {user.projects_access?.length > 0 && (
+                          <div className="access-group">
+                            <span className="access-label">Projects:</span>
+                            <div className="access-tags">
+                              {user.projects_access.map(p => (
+                                <span key={p.id} className={`access-tag project ${p.access_level}`}>
+                                  {p.name}
+                                  {p.access_level === 'owner' && <span className="owner-badge">★</span>}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {user.stores_access?.length > 0 && (
+                          <div className="access-group">
+                            <span className="access-label">Stores:</span>
+                            <div className="access-tags">
+                              {user.stores_access.map(s => (
+                                <span key={s.id} className={`access-tag store ${s.access_level}`}>
+                                  {s.name}
+                                  {s.access_level === 'owner' && <span className="owner-badge">★</span>}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {(!user.projects_access?.length && !user.stores_access?.length) && (
+                          <span className="no-access">No access assigned</span>
+                        )}
+                      </div>
+                    )}
                   </td>
                   <td>{new Date(user.created_at).toLocaleDateString()}</td>
                   <td>
