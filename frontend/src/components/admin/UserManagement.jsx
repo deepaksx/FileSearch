@@ -7,6 +7,7 @@ function UserManagement() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  const [expandedUser, setExpandedUser] = useState(null);
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -119,35 +120,75 @@ function UserManagement() {
                     {user.role === 'admin' ? (
                       <span className="access-badge admin-access">All Access</span>
                     ) : (
-                      <div className="access-info">
-                        {user.projects_access?.length > 0 && (
-                          <div className="access-group">
-                            <span className="access-label">Projects:</span>
-                            <div className="access-tags">
-                              {user.projects_access.map(p => (
-                                <span key={p.id} className={`access-tag project ${p.access_level}`}>
-                                  {p.name}
-                                  {p.access_level === 'owner' && <span className="owner-badge">★</span>}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {user.stores_access?.length > 0 && (
-                          <div className="access-group">
-                            <span className="access-label">Stores:</span>
-                            <div className="access-tags">
-                              {user.stores_access.map(s => (
-                                <span key={s.id} className={`access-tag store ${s.access_level}`}>
-                                  {s.name}
-                                  {s.access_level === 'owner' && <span className="owner-badge">★</span>}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {(!user.projects_access?.length && !user.stores_access?.length) && (
-                          <span className="no-access">No access assigned</span>
+                      <div className="access-summary">
+                        {(user.projects_access?.length > 0 || user.stores_access?.length > 0) ? (
+                          <>
+                            <button
+                              className="access-summary-btn"
+                              onClick={() => setExpandedUser(expandedUser === user.id ? null : user.id)}
+                            >
+                              <div className="access-counts">
+                                {user.projects_access?.length > 0 && (
+                                  <span className="access-count project">
+                                    <span className="count-icon">📁</span>
+                                    <span className="count-num">{user.projects_access.length}</span>
+                                    <span className="count-label">project{user.projects_access.length !== 1 ? 's' : ''}</span>
+                                    {user.projects_access.some(p => p.access_level === 'owner') && (
+                                      <span className="has-owner">★</span>
+                                    )}
+                                  </span>
+                                )}
+                                {user.stores_access?.length > 0 && (
+                                  <span className="access-count store">
+                                    <span className="count-icon">🗄️</span>
+                                    <span className="count-num">{user.stores_access.length}</span>
+                                    <span className="count-label">store{user.stores_access.length !== 1 ? 's' : ''}</span>
+                                    {user.stores_access.some(s => s.access_level === 'owner') && (
+                                      <span className="has-owner">★</span>
+                                    )}
+                                  </span>
+                                )}
+                              </div>
+                              <span className="expand-icon">{expandedUser === user.id ? '▲' : '▼'}</span>
+                            </button>
+
+                            {expandedUser === user.id && (
+                              <div className="access-details">
+                                {user.projects_access?.length > 0 && (
+                                  <div className="access-detail-group">
+                                    <div className="detail-header">Projects</div>
+                                    <div className="detail-list">
+                                      {user.projects_access.map(p => (
+                                        <div key={p.id} className={`detail-item ${p.access_level}`}>
+                                          <span className="detail-name">{p.name}</span>
+                                          <span className={`detail-level ${p.access_level}`}>
+                                            {p.access_level === 'owner' ? '★ Owner' : 'Viewer'}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                {user.stores_access?.length > 0 && (
+                                  <div className="access-detail-group">
+                                    <div className="detail-header">Direct Store Access</div>
+                                    <div className="detail-list">
+                                      {user.stores_access.map(s => (
+                                        <div key={s.id} className={`detail-item ${s.access_level}`}>
+                                          <span className="detail-name">{s.name}</span>
+                                          <span className={`detail-level ${s.access_level}`}>
+                                            {s.access_level === 'owner' ? '★ Owner' : 'Viewer'}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <span className="no-access">No access</span>
                         )}
                       </div>
                     )}
