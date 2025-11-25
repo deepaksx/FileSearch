@@ -433,3 +433,153 @@
   color: #94a3b8;
   font-size: 0.75rem;
 }
+
+/* Mobile Responsive Styles for Store Management */
+@media (max-width: 768px) {
+  .stores-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .store-card {
+    padding: 0.875rem;
+  }
+
+  .store-card-header h3 {
+    font-size: 0.95rem;
+  }
+
+  .store-stats {
+    flex-wrap: wrap;
+  }
+
+  .stat-badge {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.5rem;
+  }
+
+  .store-description {
+    font-size: 0.75rem;
+  }
+
+  .store-meta {
+    font-size: 0.7rem;
+  }
+
+  .actions-dropdown-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .dropdown-item {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.8rem;
+  }
+
+  .add-files-btn,
+  .assign-btn {
+    padding: 0.5rem 0.625rem;
+    font-size: 0.75rem;
+  }
+
+  .modal.large {
+    max-width: 100%;
+  }
+
+  .form-group textarea {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  .user-assignment-list {
+    max-height: 300px;
+  }
+
+  .user-assignment-item {
+    padding: 0.75rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .user-info strong {
+    font-size: 0.9rem;
+  }
+
+  .user-info span {
+    font-size: 0.8rem;
+  }
+
+  .assign-user-btn,
+  .unassign-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    width: 100%;
+  }
+
+  .file-row {
+    padding: 0.75rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .file-name {
+    font-size: 0.85rem;
+  }
+
+  .file-date {
+    font-size: 0.7rem;
+  }
+
+  .manage-files-btn,
+  .chat-btn,
+  .edit-btn,
+  .delete-btn {
+    padding: 0.5rem;
+    font-size: 0.65rem;
+  }
+
+  .file-upload-section {
+    padding: 0.75rem;
+  }
+
+  .file-upload-section h4,
+  .existing-files-section h4 {
+    font-size: 0.9rem;
+  }
+
+  .files-list {
+    max-height: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .store-card {
+    padding: 0.75rem;
+  }
+
+  .store-card-header h3 {
+    font-size: 0.9rem;
+  }
+
+  .stat-badge {
+    font-size: 0.6rem;
+  }
+
+  .user-assignment-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .file-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .file-info {
+    width: 100%;
+  }
+
+  .empty-message {
+    padding: 2rem 1rem;
+    font-size: 0.875rem;
+  }
+}

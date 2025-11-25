@@ -10,6 +10,7 @@ function UserDashboard({ user, onLogout }) {
   const [selectedStore, setSelectedStore] = useState(null);
   const [loading, setLoading] = useState(true);
   const [expandedProjects, setExpandedProjects] = useState(new Set());
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -58,9 +59,37 @@ function UserDashboard({ user, onLogout }) {
     onLogout();
   };
 
+  const handleStoreSelect = (store) => {
+    setSelectedStore(store);
+    setSidebarOpen(false); // Close sidebar on mobile after selection
+  };
+
   return (
     <div className="user-dashboard">
-      <div className="sidebar">
+      {/* Mobile Header with Menu Toggle */}
+      <div className="mobile-header">
+        <button
+          className="menu-toggle"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          aria-label="Toggle menu"
+        >
+          {sidebarOpen ? '✕' : '☰'}
+        </button>
+        <img src={logo} alt="NXSYS" className="mobile-logo" />
+        <span className="mobile-store-name">
+          {selectedStore?.display_name || 'Select a store'}
+        </span>
+      </div>
+
+      {/* Overlay for mobile sidebar */}
+      {sidebarOpen && (
+        <div
+          className="sidebar-overlay"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <img src={logo} alt="NXSYS" className="sidebar-logo" />
           <p className="user-name">Welcome {user.username}</p>
@@ -102,7 +131,7 @@ function UserDashboard({ user, onLogout }) {
                             <div
                               key={store.id}
                               className={`store-item ${selectedStore?.id === store.id ? 'active' : ''}`}
-                              onClick={() => setSelectedStore(store)}
+                              onClick={() => handleStoreSelect(store)}
                             >
                               <div className="store-item-name">{store.display_name}</div>
                               <div className="store-item-meta">
@@ -135,7 +164,7 @@ function UserDashboard({ user, onLogout }) {
                         <div
                           key={store.id}
                           className={`store-item ${selectedStore?.id === store.id ? 'active' : ''}`}
-                          onClick={() => setSelectedStore(store)}
+                          onClick={() => handleStoreSelect(store)}
                         >
                           <div className="store-item-name">{store.display_name}</div>
                           <div className="store-item-meta">

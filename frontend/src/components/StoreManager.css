@@ -284,3 +284,159 @@
   background: #fca5a5;
   color: white;
 }
+
+/* Mobile Responsive Styles for Store Manager */
+@media (max-width: 768px) {
+  .store-manager-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .store-manager {
+    max-width: 100%;
+    max-height: 95vh;
+    max-height: 95dvh;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .store-manager-header {
+    padding: 1rem;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .store-manager-header h2 {
+    font-size: 1.25rem;
+  }
+
+  .store-manager-content {
+    padding: 1rem;
+  }
+
+  .stores-summary {
+    flex-direction: column;
+    gap: 0.75rem;
+    text-align: center;
+  }
+
+  .store-header {
+    padding: 0.75rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .store-info {
+    width: 100%;
+  }
+
+  .store-icon {
+    font-size: 1.5rem;
+  }
+
+  .store-details h3 {
+    font-size: 1rem;
+  }
+
+  .store-meta {
+    font-size: 0.8rem;
+  }
+
+  .store-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .store-files {
+    padding: 0.75rem;
+  }
+
+  /* Make table scrollable horizontally on mobile */
+  .files-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .files-table {
+    min-width: 400px;
+  }
+
+  .files-table th,
+  .files-table td {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .store-manager {
+    max-height: 100vh;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+
+  .store-manager-header {
+    padding: 0.875rem;
+    border-radius: 0;
+  }
+
+  .store-manager-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .close-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .store-manager-content {
+    padding: 0.75rem;
+  }
+
+  .empty-icon {
+    font-size: 3rem;
+  }
+
+  .empty-state h3 {
+    font-size: 1.1rem;
+  }
+
+  .stores-summary p {
+    font-size: 0.85rem;
+  }
+
+  .refresh-btn {
+    width: 100%;
+    padding: 0.75rem;
+  }
+
+  .store-icon {
+    font-size: 1.25rem;
+  }
+
+  .store-details h3 {
+    font-size: 0.95rem;
+  }
+
+  .delete-store-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .files-table {
+    min-width: 350px;
+  }
+
+  .files-table th,
+  .files-table td {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .file-icon {
+    font-size: 1rem;
+  }
+
+  .delete-file-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.9rem;
+  }
+}

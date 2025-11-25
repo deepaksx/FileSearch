@@ -72,105 +72,53 @@ function AdminDashboard({ user, onLogout }) {
   // If in chat mode, show the chat interface
   if (chatStore) {
     return (
-      <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-        <div style={{
-          padding: '0.75rem 1.25rem',
-          background: 'white',
-          borderBottom: '1px solid #e2e8f0',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: '1rem'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+      <div className="admin-chat-mode">
+        <div className="admin-chat-header">
+          <div className="admin-chat-header-left">
             <button
               onClick={handleCloseChatMode}
-              style={{
-                padding: '0.5rem 1rem',
-                background: '#f1f5f9',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontWeight: 500,
-                fontSize: '0.875rem'
-              }}
+              className="admin-chat-back-btn"
             >
-              ← Back to Admin Dashboard
+              ← Back
             </button>
-            <h2 style={{ margin: 0, fontSize: '1.125rem', color: '#1e293b' }}>
-              Admin Chat: {chatStore.display_name}
+            <h2 className="admin-chat-title">
+              {chatStore.display_name}
             </h2>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div className="admin-chat-header-right">
             {chatHeaderActions && chatHeaderActions.sessions.length > 0 && (
               <button
                 onClick={() => chatHeaderActions.setShowHistory(!chatHeaderActions.showHistory)}
-                style={{
-                  padding: '0.5rem 1rem',
-                  background: '#f1f5f9',
-                  color: '#475569',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontWeight: 500,
-                  fontSize: '0.875rem',
-                  transition: 'all 0.2s'
-                }}
+                className="admin-chat-btn secondary"
               >
-                📜 {chatHeaderActions.showHistory ? 'Hide' : 'Show'} History ({chatHeaderActions.sessions.length})
+                <span className="btn-icon">📜</span>
+                <span className="btn-text">{chatHeaderActions.showHistory ? 'Hide' : 'History'}</span>
               </button>
             )}
             {chatHeaderActions && chatHeaderActions.isOwner && (
               <button
                 onClick={chatHeaderActions.handleManageFiles}
-                style={{
-                  padding: '0.5rem 1rem',
-                  background: '#667eea',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontWeight: 500,
-                  fontSize: '0.875rem',
-                  transition: 'all 0.2s'
-                }}
+                className="admin-chat-btn primary"
               >
-                📁 Manage Files
+                <span className="btn-icon">📁</span>
+                <span className="btn-text">Files</span>
               </button>
             )}
             {chatHeaderActions && (
               <button
                 onClick={chatHeaderActions.handleNewSession}
-                style={{
-                  padding: '0.5rem 1rem',
-                  background: '#c9274b',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontWeight: 500,
-                  fontSize: '0.875rem',
-                  transition: 'all 0.2s'
-                }}
+                className="admin-chat-btn accent"
               >
-                + New Chat Session
+                <span className="btn-icon">+</span>
+                <span className="btn-text">New</span>
               </button>
             )}
-            <button onClick={handleLogout} style={{
-              padding: '0.5rem 1rem',
-              background: '#dc2626',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontWeight: 500,
-              fontSize: '0.875rem'
-            }}>
-              Logout
+            <button onClick={handleLogout} className="admin-chat-btn danger">
+              <span className="btn-text-only">Logout</span>
             </button>
           </div>
         </div>
-        <div style={{ flex: 1, overflow: 'hidden' }}>
+        <div className="admin-chat-content">
           <ChatInterface
             store={chatStore}
             user={user}

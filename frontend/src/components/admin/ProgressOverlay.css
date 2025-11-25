@@ -80,3 +80,72 @@
   color: #667eea;
   margin: 0;
 }
+
+/* Mobile Responsive Styles for ProgressOverlay */
+@media (max-width: 768px) {
+  .progress-overlay {
+    padding: 1rem;
+  }
+
+  .progress-modal {
+    min-width: auto;
+    width: 100%;
+    max-width: 400px;
+    padding: 2rem 1.5rem;
+    border-radius: 12px;
+  }
+
+  .progress-modal h3 {
+    font-size: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .progress-info p {
+    font-size: 0.9rem;
+  }
+
+  .file-count {
+    font-size: 0.8rem;
+  }
+
+  .progress-bar-container {
+    height: 10px;
+  }
+
+  .progress-percentage {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .progress-modal {
+    padding: 1.5rem 1rem;
+    border-radius: 8px;
+  }
+
+  .progress-modal h3 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+  }
+
+  .progress-info {
+    margin-bottom: 1rem;
+  }
+
+  .progress-info p {
+    font-size: 0.85rem;
+  }
+
+  .file-count {
+    font-size: 0.75rem;
+  }
+
+  .progress-bar-container {
+    height: 8px;
+    margin-bottom: 0.75rem;
+  }
+
+  .progress-percentage {
+    font-size: 1rem;
+  }
+}
