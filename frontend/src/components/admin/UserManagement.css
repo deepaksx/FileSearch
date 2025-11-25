@@ -50,7 +50,7 @@
   background: white;
   border-radius: 8px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid #e2e8f0;
 }
 
@@ -263,10 +263,16 @@
 /* Access Info Styles */
 .access-cell {
   min-width: 160px;
+  overflow: visible;
+  position: relative;
 }
 
 .access-summary {
   position: relative;
+}
+
+.data-table tbody tr {
+  overflow: visible;
 }
 
 .access-summary-btn {
@@ -459,6 +465,7 @@
 
   .table-container {
     overflow-x: auto;
+    overflow-y: visible;
     -webkit-overflow-scrolling: touch;
   }
 
