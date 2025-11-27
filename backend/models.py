@@ -233,14 +233,21 @@ def init_db(database_url=None):
     if database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
 
-    engine = create_engine(
-        database_url,
-        echo=False,
-        pool_size=20,
-        max_overflow=40,
-        pool_recycle=3600,
-        pool_pre_ping=True
-    )
+    # Configure engine based on database type
+    if database_url.startswith('sqlite'):
+        # SQLite doesn't support connection pooling
+        engine = create_engine(database_url, echo=False)
+    else:
+        # PostgreSQL with connection pooling
+        engine = create_engine(
+            database_url,
+            echo=False,
+            pool_size=20,
+            max_overflow=40,
+            pool_recycle=3600,
+            pool_pre_ping=True
+        )
+
     Base.metadata.create_all(engine)
     return engine
 
