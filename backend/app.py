@@ -1582,6 +1582,177 @@ def owner_delete_file_from_store(store_id, file_id):
         return jsonify({"error": str(e)}), 500
 
 
+# ==================== GEMINI STORE MANAGER ====================
+
+@app.route('/api/admin/gemini-stores', methods=['GET'])
+@jwt_required()
+@admin_required
+def list_all_gemini_stores():
+    """Admin: List all Gemini file search stores from Google account"""
+    try:
+        # Get all stores from Gemini API
+        gemini_stores = list(client.file_search_stores.list())
+
+        # Get all stores from our database to check which are imported
+        db_stores = db_session.query(Store).all()
+        imported_store_ids = {s.gemini_store_id for s in db_stores}
+
+        # Build response
+        stores_list = []
+        for store in gemini_stores:
+            store_id = store.name
+
+            # Get file count
+            try:
+                files = list(client.file_search_stores.documents.list(parent=store_id))
+                file_count = len(files)
+            except:
+                file_count = 0
+
+            # Check if imported in our database
+            is_imported = store_id in imported_store_ids
+            db_store = None
+            if is_imported:
+                db_store = db_session.query(Store).filter_by(gemini_store_id=store_id).first()
+
+            stores_list.append({
+                'gemini_store_id': store_id,
+                'display_name': store.display_name if hasattr(store, 'display_name') else store_id,
+                'file_count': file_count,
+                'is_imported': is_imported,
+                'db_store_id': db_store.id if db_store else None,
+                'db_display_name': db_store.display_name if db_store else None,
+                'db_project_id': db_store.project_id if db_store else None,
+                'create_time': store.create_time.isoformat() if hasattr(store, 'create_time') and store.create_time else None
+            })
+
+        return jsonify({
+            "success": True,
+            "stores": stores_list,
+            "total": len(stores_list),
+            "imported": len([s for s in stores_list if s['is_imported']]),
+            "orphaned": len([s for s in stores_list if not s['is_imported']])
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/admin/gemini-stores/<path:gemini_store_id>/files', methods=['GET'])
+@jwt_required()
+@admin_required
+def get_gemini_store_files(gemini_store_id):
+    """Admin: Get files in a Gemini store"""
+    try:
+        files = list(client.file_search_stores.documents.list(parent=gemini_store_id))
+
+        files_list = []
+        for file in files:
+            files_list.append({
+                'id': file.name,
+                'display_name': file.display_name if hasattr(file, 'display_name') else file.name,
+                'create_time': file.create_time.isoformat() if hasattr(file, 'create_time') and file.create_time else None
+            })
+
+        return jsonify({
+            "success": True,
+            "files": files_list,
+            "total": len(files_list)
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/admin/gemini-stores/import', methods=['POST'])
+@jwt_required()
+@admin_required
+def import_gemini_store():
+    """Admin: Import an existing Gemini store into the database"""
+    try:
+        data = request.get_json()
+        gemini_store_id = data.get('gemini_store_id')
+        project_id = data.get('project_id')
+        display_name = data.get('display_name')
+        description = data.get('description', '')
+
+        if not gemini_store_id or not project_id or not display_name:
+            return jsonify({"error": "gemini_store_id, project_id, and display_name required"}), 400
+
+        # Verify project exists
+        project = db_session.query(Project).filter_by(id=project_id).first()
+        if not project:
+            return jsonify({"error": "Project not found"}), 404
+
+        # Check if already imported
+        existing = db_session.query(Store).filter_by(gemini_store_id=gemini_store_id).first()
+        if existing:
+            return jsonify({"error": "This Gemini store is already imported"}), 400
+
+        # Verify the Gemini store exists
+        try:
+            gemini_store = client.file_search_stores.get(name=gemini_store_id)
+        except Exception as e:
+            return jsonify({"error": f"Gemini store not found: {str(e)}"}), 404
+
+        # Create database entry
+        current_user = get_current_user()
+        store = Store(
+            project_id=project_id,
+            gemini_store_id=gemini_store_id,
+            display_name=display_name,
+            description=description,
+            created_by=current_user.id
+        )
+
+        db_session.add(store)
+        db_session.commit()
+
+        return jsonify({
+            "success": True,
+            "store": store.to_dict(),
+            "message": f"Successfully imported Gemini store as '{display_name}'"
+        })
+
+    except Exception as e:
+        db_session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/admin/gemini-stores/<path:gemini_store_id>', methods=['DELETE'])
+@jwt_required()
+@admin_required
+def delete_gemini_store(gemini_store_id):
+    """Admin: Delete a Gemini store from Google (and database if imported)"""
+    try:
+        # Check if it's in our database
+        db_store = db_session.query(Store).filter_by(gemini_store_id=gemini_store_id).first()
+
+        # Delete from Gemini
+        try:
+            client.file_search_stores.delete(
+                name=gemini_store_id,
+                config=types.DeleteFileSearchStoreConfig(force=True)
+            )
+        except Exception as gemini_error:
+            return jsonify({"error": f"Failed to delete from Gemini: {str(gemini_error)}"}), 500
+
+        # Delete from database if exists
+        if db_store:
+            db_session.delete(db_store)
+            db_session.commit()
+
+        return jsonify({
+            "success": True,
+            "message": "Gemini store deleted successfully",
+            "was_imported": db_store is not None
+        })
+
+    except Exception as e:
+        db_session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
 # ==================== HEALTH CHECK ====================
 
 @app.route('/api/health', methods=['GET'])

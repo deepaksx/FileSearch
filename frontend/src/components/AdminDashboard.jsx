@@ -3,6 +3,7 @@ import { logout, getStoreFiles } from '../utils/api';
 import UserManagement from './admin/UserManagement';
 import ProjectManagement from './admin/ProjectManagement';
 import StoreManagement from './admin/StoreManagement';
+import GeminiStoreManager from './admin/GeminiStoreManager';
 import ChatInterface from './user/ChatInterface';
 import logo from '../assets/logo.png';
 import './AdminDashboard.css';
@@ -176,6 +177,12 @@ function AdminDashboard({ user, onLogout }) {
         >
           Users
         </button>
+        <button
+          className={`tab-btn ${activeTab === 'rag-stores' ? 'active' : ''}`}
+          onClick={() => setActiveTab('rag-stores')}
+        >
+          RAG Stores
+        </button>
       </div>
 
       {selectedProject && activeTab === 'stores' && (
@@ -192,6 +199,7 @@ function AdminDashboard({ user, onLogout }) {
         {activeTab === 'projects' && <ProjectManagement onProjectSelect={handleProjectSelect} />}
         {activeTab === 'stores' && <StoreManagement selectedProject={selectedProject} />}
         {activeTab === 'users' && <UserManagement />}
+        {activeTab === 'rag-stores' && <GeminiStoreManager />}
       </div>
     </div>
   );
