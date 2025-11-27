@@ -13,7 +13,7 @@ def init_mail(app):
 
     # Check if email is configured
     if not os.getenv('MAIL_USERNAME') or not os.getenv('MAIL_PASSWORD'):
-        print("⚠️  WARNING: Email not configured. OTP features will not work.")
+        print("WARNING: Email not configured. OTP features will not work.")
         print("   Set MAIL_USERNAME and MAIL_PASSWORD environment variables to enable email.")
         return None
 
@@ -26,7 +26,7 @@ def init_mail(app):
     app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER', os.getenv('MAIL_USERNAME'))
 
     mail = Mail(app)
-    print("✅ Email configured successfully")
+    print("Email configured successfully")
     return mail
 
 

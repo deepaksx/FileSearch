@@ -1,3 +1,4 @@
+/* Project Management - NXSYS Design */
 .project-management {
   max-width: 1400px;
 }
@@ -5,54 +6,56 @@
 .projects-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1rem;
+  gap: var(--spacing-md);
 }
 
 .project-card {
-  background: white;
-  border-radius: 8px;
-  padding: 1rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  transition: all 0.15s;
-  border: 1px solid #e2e8f0;
+  background: var(--glass-bg);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-md);
+  transition: all var(--transition-base);
+  border: 1px solid var(--glass-border);
   overflow: visible;
   position: relative;
+  backdrop-filter: var(--glass-blur);
 }
 
 .project-card:hover {
-  border-color: #667eea;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+  border-color: var(--color-accent-primary);
+  box-shadow: var(--shadow-accent);
+  transform: translateY(-4px);
 }
 
 .project-card-header {
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--spacing-md);
 }
 
 .project-card-header h3 {
-  margin: 0 0 0.5rem 0;
-  color: #1e293b;
-  font-size: 1rem;
-  font-weight: 600;
+  margin: 0 0 var(--spacing-sm) 0;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
 }
 
 .project-stats {
   display: flex;
-  gap: 0.4rem;
+  gap: var(--spacing-sm);
 }
 
 .stat-badge {
-  background: #f1f5f9;
-  color: #475569;
-  padding: 0.25rem 0.6rem;
-  border-radius: 16px;
-  font-size: 0.7rem;
-  font-weight: 600;
+  background: rgba(200, 16, 46, 0.15);
+  color: var(--color-accent-secondary);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
 }
 
 .project-description {
-  color: #64748b;
-  font-size: 0.8rem;
-  margin: 0 0 0.75rem 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-sm);
+  margin: 0 0 var(--spacing-md) 0;
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -61,44 +64,46 @@
 }
 
 .project-meta {
-  color: #94a3b8;
-  font-size: 0.75rem;
-  margin-bottom: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid #e2e8f0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  margin-bottom: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--glass-border);
 }
 
 .project-actions {
   display: flex;
-  gap: 0.4rem;
+  gap: var(--spacing-sm);
   flex-wrap: wrap;
 }
 
 .view-stores-btn {
   flex: 1;
-  padding: 0.5rem 0.875rem;
-  background: #667eea;
-  color: white;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--gradient-accent);
+  color: var(--color-text-primary);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  font-size: 0.8rem;
-  font-weight: 600;
-  transition: all 0.15s;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-accent);
 }
 
 .view-stores-btn:hover {
-  background: #5568d3;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-accent-hover);
 }
 
 .info-message {
-  background: #dbeafe;
-  color: #1e40af;
-  padding: 0.75rem;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  margin-bottom: 1rem;
-  border-left: 3px solid #3b82f6;
+  background: rgba(200, 16, 46, 0.1);
+  color: var(--color-accent-secondary);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-md);
+  border-left: 3px solid var(--color-accent-primary);
 }
 
 /* Dropdown styles */
@@ -108,20 +113,22 @@
 
 .actions-dropdown-btn {
   width: 100%;
-  padding: 0.5rem 1rem;
-  background: #667eea;
-  color: white;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--gradient-accent);
+  color: var(--color-text-primary);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  font-size: 0.875rem;
-  font-weight: 600;
-  transition: all 0.15s;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  transition: all var(--transition-base);
   text-align: center;
+  box-shadow: var(--shadow-accent);
 }
 
 .actions-dropdown-btn:hover {
-  background: #5a67d8;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-accent-hover);
 }
 
 .dropdown-menu {
@@ -129,99 +136,100 @@
   top: 100%;
   left: 0;
   right: 0;
-  margin-top: 0.25rem;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin-top: var(--spacing-xs);
+  background: var(--color-dark-secondary);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-xl);
   z-index: 1000;
   overflow: hidden;
 }
 
 .dropdown-item {
   width: 100%;
-  padding: 0.75rem 1rem;
-  background: white;
+  padding: var(--spacing-md);
+  background: transparent;
   border: none;
   text-align: left;
   cursor: pointer;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #1e293b;
-  transition: background 0.15s;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  transition: all var(--transition-fast);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
 }
 
 .dropdown-item:hover {
-  background: #f8fafc;
+  background: var(--glass-bg-hover);
+  color: var(--color-text-primary);
 }
 
 .dropdown-item.delete {
-  color: #dc2626;
+  color: #ef4444;
 }
 
 .dropdown-item.delete:hover {
-  background: #fee2e2;
+  background: rgba(239, 68, 68, 0.15);
 }
 
 /* Mobile Responsive Styles for Project Management */
 @media (max-width: 768px) {
   .projects-grid {
     grid-template-columns: 1fr;
-    gap: 0.75rem;
+    gap: var(--spacing-md);
   }
 
   .project-card {
-    padding: 0.875rem;
+    padding: var(--spacing-md);
   }
 
   .project-card-header h3 {
-    font-size: 0.95rem;
+    font-size: var(--font-size-sm);
   }
 
   .stat-badge {
     font-size: 0.65rem;
-    padding: 0.2rem 0.5rem;
+    padding: var(--spacing-xs);
   }
 
   .project-description {
-    font-size: 0.75rem;
+    font-size: var(--font-size-xs);
   }
 
   .project-meta {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
   }
 
   .view-stores-btn {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.75rem;
+    padding: var(--spacing-sm);
+    font-size: var(--font-size-xs);
   }
 
   .info-message {
-    font-size: 0.8rem;
-    padding: 0.625rem;
+    font-size: var(--font-size-xs);
+    padding: var(--spacing-sm);
   }
 
   .actions-dropdown-btn {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8rem;
+    padding: var(--spacing-sm);
+    font-size: var(--font-size-xs);
   }
 
   .dropdown-item {
-    padding: 0.625rem 0.875rem;
-    font-size: 0.8rem;
+    padding: var(--spacing-md);
+    font-size: var(--font-size-xs);
   }
 }
 
 @media (max-width: 480px) {
   .project-card {
-    padding: 0.75rem;
+    padding: var(--spacing-md);
   }
 
   .project-card-header h3 {
-    font-size: 0.9rem;
+    font-size: var(--font-size-sm);
   }
 
   .project-stats {
