@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey, Text, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.pool import NullPool, StaticPool
 from datetime import datetime
 import bcrypt
 import os
@@ -235,8 +236,14 @@ def init_db(database_url=None):
 
     # Configure engine based on database type
     if database_url.startswith('sqlite'):
-        # SQLite doesn't support connection pooling
-        engine = create_engine(database_url, echo=False)
+        # SQLite - use StaticPool for in-memory or NullPool for file-based
+        # This prevents connection pool exhaustion issues
+        engine = create_engine(
+            database_url,
+            echo=False,
+            poolclass=StaticPool,
+            connect_args={'check_same_thread': False}
+        )
     else:
         # PostgreSQL with connection pooling
         engine = create_engine(

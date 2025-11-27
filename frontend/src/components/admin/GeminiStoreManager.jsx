@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import './GeminiStoreManager.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 function GeminiStoreManager() {
   const [stores, setStores] = useState([]);
@@ -28,6 +28,9 @@ function GeminiStoreManager() {
   });
   const [importing, setImporting] = useState(false);
 
+  // View mode
+  const [viewMode, setViewMode] = useState('list'); // 'tile' or 'list'
+
   useEffect(() => {
     fetchStores();
     fetchProjects();
@@ -37,7 +40,7 @@ function GeminiStoreManager() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${API_URL}/api/admin/gemini-stores`, {
+      const response = await fetch(`${API_URL}/admin/gemini-stores`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -62,7 +65,7 @@ function GeminiStoreManager() {
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/admin/projects`, {
+      const response = await fetch(`${API_URL}/admin/projects`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -83,7 +86,7 @@ function GeminiStoreManager() {
     setStoreFiles([]);
 
     try {
-      const response = await fetch(`${API_URL}/api/admin/gemini-stores/${encodeURIComponent(store.gemini_store_id)}/files`, {
+      const response = await fetch(`${API_URL}/admin/gemini-stores/${encodeURIComponent(store.gemini_store_id)}/files`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -118,7 +121,7 @@ function GeminiStoreManager() {
 
     setImporting(true);
     try {
-      const response = await fetch(`${API_URL}/api/admin/gemini-stores/import`, {
+      const response = await fetch(`${API_URL}/admin/gemini-stores/import`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -153,7 +156,7 @@ function GeminiStoreManager() {
 
   const handleDeleteConfirm = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/admin/gemini-stores/${encodeURIComponent(selectedStore.gemini_store_id)}`, {
+      const response = await fetch(`${API_URL}/admin/gemini-stores/${encodeURIComponent(selectedStore.gemini_store_id)}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -192,9 +195,36 @@ function GeminiStoreManager() {
           <h2>RAG Store Manager</h2>
           <p>Manage RAG file stores in your cloud account</p>
         </div>
-        <button onClick={fetchStores} className="refresh-btn">
-          Refresh
-        </button>
+        <div className="header-actions">
+          <div className="view-toggle">
+            <button
+              className={`view-toggle-btn ${viewMode === 'tile' ? 'active' : ''}`}
+              onClick={() => setViewMode('tile')}
+              title="Tile View"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <rect x="1" y="1" width="6" height="6" rx="1"/>
+                <rect x="9" y="1" width="6" height="6" rx="1"/>
+                <rect x="1" y="9" width="6" height="6" rx="1"/>
+                <rect x="9" y="9" width="6" height="6" rx="1"/>
+              </svg>
+            </button>
+            <button
+              className={`view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
+              onClick={() => setViewMode('list')}
+              title="List View"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <rect x="1" y="2" width="14" height="2" rx="0.5"/>
+                <rect x="1" y="7" width="14" height="2" rx="0.5"/>
+                <rect x="1" y="12" width="14" height="2" rx="0.5"/>
+              </svg>
+            </button>
+          </div>
+          <button onClick={fetchStores} className="refresh-btn">
+            Refresh
+          </button>
+        </div>
       </div>
 
       <div className="stats-bar">
@@ -216,7 +246,7 @@ function GeminiStoreManager() {
         <div className="empty-state">
           <p>No RAG stores found in your account.</p>
         </div>
-      ) : (
+      ) : viewMode === 'tile' ? (
         <div className="gemini-stores-list">
           {stores.map((store) => (
             <div key={store.gemini_store_id} className={`gemini-store-card ${store.is_imported ? 'imported' : 'orphaned'}`}>
@@ -260,17 +290,67 @@ function GeminiStoreManager() {
                 <button onClick={() => handleViewFiles(store)} className="view-files-btn">
                   View Files
                 </button>
-                {!store.is_imported && (
-                  <button onClick={() => handleImportClick(store)} className="import-btn">
-                    Import
-                  </button>
-                )}
+                <button onClick={() => handleImportClick(store)} className={store.is_imported ? "reimport-btn" : "import-btn"}>
+                  {store.is_imported ? 'Re-import' : 'Import'}
+                </button>
                 <button onClick={() => handleDeleteClick(store)} className="delete-gemini-btn">
                   Delete
                 </button>
               </div>
             </div>
           ))}
+        </div>
+      ) : (
+        <div className="stores-table-container">
+          <table className="stores-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Store ID</th>
+                <th>Files</th>
+                <th>Created</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stores.map((store) => (
+                <tr key={store.gemini_store_id} className={store.is_imported ? 'imported' : 'orphaned'}>
+                  <td className="store-name-cell">
+                    <span className="store-name">{store.display_name}</span>
+                    {store.is_imported && store.db_display_name !== store.display_name && (
+                      <span className="app-name-sub">App: {store.db_display_name}</span>
+                    )}
+                  </td>
+                  <td className="store-id-cell">
+                    <span className="store-id-text">{store.gemini_store_id}</span>
+                  </td>
+                  <td className="files-cell">{store.file_count}</td>
+                  <td className="date-cell">
+                    {store.create_time ? new Date(store.create_time).toLocaleDateString() : '-'}
+                  </td>
+                  <td className="status-cell">
+                    <span className={`status-badge ${store.is_imported ? 'imported' : 'orphaned'}`}>
+                      {store.is_imported ? 'Imported' : 'Not Imported'}
+                    </span>
+                  </td>
+                  <td className="actions-cell">
+                    <div className="table-actions">
+                      <button onClick={() => handleViewFiles(store)} className="table-action-btn view">
+                        Files
+                      </button>
+                      <button onClick={() => handleImportClick(store)} className={`table-action-btn ${store.is_imported ? 'reimport' : 'import'}`}>
+                        {store.is_imported ? 'Re-import' : 'Import'}
+                      </button>
+                      <button onClick={() => handleDeleteClick(store)} className="table-action-btn delete">
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 

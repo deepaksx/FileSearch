@@ -1686,8 +1686,6 @@ def import_gemini_store():
 
         # Check if already imported
         existing = db_session.query(Store).filter_by(gemini_store_id=gemini_store_id).first()
-        if existing:
-            return jsonify({"error": "This Gemini store is already imported"}), 400
 
         # Verify the Gemini store exists
         try:
@@ -1695,24 +1693,38 @@ def import_gemini_store():
         except Exception as e:
             return jsonify({"error": f"Gemini store not found: {str(e)}"}), 404
 
-        # Create database entry
         current_user = get_current_user()
-        store = Store(
-            project_id=project_id,
-            gemini_store_id=gemini_store_id,
-            display_name=display_name,
-            description=description,
-            created_by=current_user.id
-        )
 
-        db_session.add(store)
-        db_session.commit()
+        if existing:
+            # Re-import: Update existing store record
+            existing.project_id = project_id
+            existing.display_name = display_name
+            existing.description = description
+            db_session.commit()
 
-        return jsonify({
-            "success": True,
-            "store": store.to_dict(),
-            "message": f"Successfully imported Gemini store as '{display_name}'"
-        })
+            return jsonify({
+                "success": True,
+                "store": existing.to_dict(),
+                "message": f"Successfully re-imported store as '{display_name}'"
+            })
+        else:
+            # Create new database entry
+            store = Store(
+                project_id=project_id,
+                gemini_store_id=gemini_store_id,
+                display_name=display_name,
+                description=description,
+                created_by=current_user.id
+            )
+
+            db_session.add(store)
+            db_session.commit()
+
+            return jsonify({
+                "success": True,
+                "store": store.to_dict(),
+                "message": f"Successfully imported Gemini store as '{display_name}'"
+            })
 
     except Exception as e:
         db_session.rollback()
